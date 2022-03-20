@@ -118,7 +118,7 @@ void Handle_ReadNum(){
 		result = 0;
 	}
 
-	DEBUG(dbgSys, "Input the number returning with " << result << "\n");
+	DEBUG(dbgSys, "Read the number returning with " << result << "\n");
 	/* Prepare Result */
 	kernel->machine->WriteRegister(2, (int)result);
 }
@@ -166,6 +166,36 @@ void Handle_PrintNum(){
 	}
 	kernel->synchConsoleOut->PutChar('\n');
 	delete result;
+}
+
+void Handle_ReadChar(){
+	DEBUG(dbgSys, "Read a character.\n");
+
+	char result = kernel->synchConsoleIn->GetChar();
+	if(result == '\n')
+		DEBUG(dbgSys, "Character is empty.\n")
+	else
+		DEBUG(dbgSys, "Read the charactor returning with " << result << "\n");
+	/* Prepare Result */
+	kernel->machine->WriteRegister(2, result);
+}
+
+void Handle_PrintChar(){
+	char result = kernel->machine->ReadRegister(4);
+	DEBUG(dbgSys, "Print the character " << result << " to console.\n");
+	kernel->synchConsoleOut->PutChar(result);
+	kernel->synchConsoleOut->PutChar('\n');
+}
+
+void Handle_RandomNum(){
+	DEBUG(dbgSys, "Random a positive integer number.\n");
+
+	srand(time(0));
+	unsigned int result = rand();
+
+	DEBUG(dbgSys, "Random returning with " << result << "\n");
+	/* Prepare Result */
+	kernel->machine->WriteRegister(2, result);
 }
 
 void ExceptionHandler(ExceptionType which){
@@ -244,6 +274,30 @@ void ExceptionHandler(ExceptionType which){
 					IncreasePC();
 					return;
 					
+					ASSERTNOTREACHED();
+					break;
+
+				case SC_ReadChar:
+					Handle_ReadChar();
+					IncreasePC();
+					return;
+
+					ASSERTNOTREACHED();
+					break;
+
+				case SC_PrintChar:
+					Handle_PrintChar();
+					IncreasePC();
+					return;
+
+					ASSERTNOTREACHED();
+					break;
+				
+				case SC_RandomNum:
+					Handle_RandomNum();
+					IncreasePC();
+					return;
+
 					ASSERTNOTREACHED();
 					break;
      			default:

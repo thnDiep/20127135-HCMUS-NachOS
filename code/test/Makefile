@@ -112,7 +112,7 @@ ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = add halt shell matmult sort ioNum
+PROGRAMS = add halt shell matmult sort randomNum
 endif
 
 all: $(PROGRAMS)
@@ -137,6 +137,18 @@ ioNum.o: ioNum.c
 ioNum: ioNum.o start.o
 	$(LD) $(LDFLAGS) start.o ioNum.o -o ioNum.coff
 	$(COFF2NOFF) ioNum.coff ioNum
+
+ioChar.o: ioChar.c
+	$(CC) $(CFLAGS) -c ioChar.c
+ioChar: ioChar.o start.o
+	$(LD) $(LDFLAGS) start.o ioChar.o -o ioChar.coff
+	$(COFF2NOFF) ioChar.coff ioChar
+
+randomNum.o: randomNum.c
+	$(CC) $(CFLAGS) -c randomNum.c
+randomNum: randomNum.o start.o
+	$(LD) $(LDFLAGS) start.o randomNum.o -o randomNum.coff
+	$(COFF2NOFF) randomNum.coff randomNum
 
 shell.o: shell.c
 	$(CC) $(CFLAGS) -c shell.c

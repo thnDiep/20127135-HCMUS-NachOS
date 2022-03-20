@@ -38,6 +38,9 @@
 #define SC_Add		    42
 #define SC_ReadNum  	43
 #define SC_PrintNum     44
+#define SC_ReadChar     45
+#define SC_PrintChar    46
+#define SC_RandomNum    47
 
 #ifndef IN_ASM
 
@@ -57,11 +60,20 @@ void Halt();
 // Add the two operants and return the result
 int Add(int op1, int op2);
 
-// Read the integer number input by user and return this number or 0 (if invalid)
+// Read the integer number input by user and return it or 0 (if not a integer)
 int ReadNum();
 
 // Print the integer number to console
 void PrintNum(int number);
+
+// Read the character input by user and return it
+char ReadChar();
+
+// Print the character to console
+void PrintChar(char character);
+
+// Random and return the positive integer number
+int RandomNum();
 
 /* Address space control operations: Exit, Exec, Execv, and Join */
 
