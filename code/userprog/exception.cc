@@ -130,23 +130,23 @@ void ExceptionHandler(ExceptionType which){
 					ASSERTNOTREACHED();
 					break;
 
-      			// case SC_Add:
-				// 	Handle_Add();
-				// 	IncreasePC();
-				// 	return;
+      			case SC_Add:
+					Handle_Add();
+					IncreasePC();
+					return;
 	
-				// 	ASSERTNOTREACHED();
-				// 	break;
+					ASSERTNOTREACHED();
+					break;
 
-				// case SC_ReadNum:
-				// 	DEBUG(dbgSys, "readnumok\n");
-				// 	int result = 0;
-				// 	kernel->machine->WriteRegister(2, (int)result);
-				// 	// IncreasePC();
-				// 	// return;
-				// 	return;
-				// 	ASSERTNOTREACHED();
-				// 	break;
+				case SC_ReadNum:
+					DEBUG(dbgSys, "readnumok\n");
+					int result = 0;
+					kernel->machine->WriteRegister(2, (int)result);
+					// IncreasePC();
+					// return;
+					return;
+					ASSERTNOTREACHED();
+					break;
 
      			default:
 					cerr << "Unexpected system call " << type << "\n";
