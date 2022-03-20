@@ -18,24 +18,25 @@
 /* system call codes -- used by the stubs to tell the kernel which system call
  * is being asked for
  */
-#define SC_Halt		0
-#define SC_Exit		1
-#define SC_Exec		2
-#define SC_Join		3
-#define SC_Create	4
+#define SC_Halt		    0
+#define SC_Exit		    1
+#define SC_Exec		    2
+#define SC_Join		    3
+#define SC_Create	    4
 #define SC_Remove       5
-#define SC_Open		6
-#define SC_Read		7
-#define SC_Write	8
+#define SC_Open		    6
+#define SC_Read		    7
+#define SC_Write	    8
 #define SC_Seek         9
-#define SC_Close	10
+#define SC_Close	    10
 #define SC_ThreadFork	11
 #define SC_ThreadYield	12
-#define SC_ExecV	13
+#define SC_ExecV	    13
 #define SC_ThreadExit   14
 #define SC_ThreadJoin   15
 
-#define SC_Add		42
+#define SC_Add		    42
+#define SC_ReadNum  	43
 
 #ifndef IN_ASM
 
@@ -52,12 +53,11 @@
 /* Stop Nachos, and print out performance stats */
 void Halt();		
  
- 
-/*
- * Add the two operants and return the result
- */ 
-
+// Add the two operants and return the result
 int Add(int op1, int op2);
+
+// Read the integer number and return this number or 0 (if invalid)
+int ReadNum();
 
 /* Address space control operations: Exit, Exec, Execv, and Join */
 

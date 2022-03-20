@@ -42,7 +42,7 @@ __start:
  * -------------------------------------------------------------
  */
 
-	.globl Halt
+	.globl 	Halt
 	.ent	Halt
 Halt:
 	addiu $2,$0,SC_Halt
@@ -50,13 +50,21 @@ Halt:
 	j	$31
 	.end Halt
 
-	.globl Add
+	.globl 	Add
 	.ent	Add
 Add:
 	addiu $2,$0,SC_Add
 	syscall
 	j 	$31
 	.end Add
+
+	.globl 	ReadNum
+	.ent	ReadNum
+ReadNum:
+	addiu $2,$0,SC_ReadNum
+	syscall
+	j 	$31
+	.end ReadNum
 
 	.globl Exit
 	.ent	Exit

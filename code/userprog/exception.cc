@@ -47,38 +47,11 @@
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	is in machine.h.
 //----------------------------------------------------------------------
-
-void ExceptionHandler(ExceptionType which)
-{
-    int type = kernel->machine->ReadRegister(2);
-
-    DEBUG(dbgSys, "Received Exception " << which << " type: " << type << "\n");
-
-    switch (which) {
-    case SyscallException:
-      switch(type) {
-      case SC_Halt:
-	DEBUG(dbgSys, "Shutdown, initiated by user program.\n");
-
-	SysHalt();
-
-	ASSERTNOTREACHED();
-	break;
-
-      case SC_Add:
-	DEBUG(dbgSys, "Add " << kernel->machine->ReadRegister(4) << " + " << kernel->machine->ReadRegister(5) << "\n");
 	
-	/* Process SysAdd Systemcall*/
-	int result;
-	result = SysAdd(/* int op1 */(int)kernel->machine->ReadRegister(4),
-			/* int op2 */(int)kernel->machine->ReadRegister(5));
 
-	DEBUG(dbgSys, "Add returning with " << result << "\n");
-	/* Prepare Result */
-	kernel->machine->WriteRegister(2, (int)result);
-	
-	/* Modify return point */
-	{
+
+/* Modify return point */
+void IncreasePC(){
 	  /* set previous programm counter (debugging only)*/
 	  kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
 
@@ -86,23 +59,105 @@ void ExceptionHandler(ExceptionType which)
 	  kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
 	  
 	  /* set next programm counter for brach execution */
-	  kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg)+4);
-	}
+	  kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
+}
 
-	return;
+void Handle_Add(){
+	DEBUG(dbgSys, "Add " << kernel->machine->ReadRegister(4) << " + " << kernel->machine->ReadRegister(5) << "\n");
 	
-	ASSERTNOTREACHED();
+	/* Process SysAdd Systemcall*/
+	int result;
+	result = SysAdd(/* int op1 */(int)kernel->machine->ReadRegister(4),
+					/* int op2 */(int)kernel->machine->ReadRegister(5));
 
-	break;
+	DEBUG(dbgSys, "Add returning with " << result << "\n");
+	/* Prepare Result */
+	kernel->machine->WriteRegister(2, (int)result);
+}
 
-      default:
-	cerr << "Unexpected system call " << type << "\n";
-	break;
-      }
-      break;
-    default:
-      cerr << "Unexpected user mode exception" << (int)which << "\n";
-      break;
+
+void ExceptionHandler(ExceptionType which){
+    int type = kernel->machine->ReadRegister(2);
+
+    DEBUG(dbgSys, "Received Exception " << which << " type: " << type << "\n");
+
+    switch (which) {
+		case NoException:
+			return;
+
+		case PageFaultException:
+			cerr << "PageFaultException: No valid translation found.\n";
+			SysHalt();
+			break;
+
+		case ReadOnlyException:
+			cerr << "ReadOnlyException: Write attempted to page marked 'read-only'.\n";
+			SysHalt();
+			break;
+
+		case BusErrorException:
+			cerr << "BusErrorException: Translation resulted in an invalid physical address.\n";
+			SysHalt();
+			break;
+
+		case AddressErrorException:
+			cerr << "AddressErrorException: Unaligned reference or one that was beyond the end of the address space.\n";
+			SysHalt();
+			break;
+
+		case OverflowException:
+			cerr << "OverflowException: Integer overflow in add or sub.\n";
+			SysHalt();
+			break;
+
+		case IllegalInstrException:
+			cerr << "IllegalInstrException: Unimplemented or reserved instr.\n";
+			SysHalt();
+			break;
+
+		case NumExceptionTypes:
+			cerr << "NumExceptionTypes\n";
+			SysHalt();
+			break;
+
+    	case SyscallException:
+      		switch(type) {
+      			case SC_Halt:
+					DEBUG(dbgSys, "Shutdown, initiated by user program.\n");
+
+					SysHalt();
+
+					ASSERTNOTREACHED();
+					break;
+
+      			// case SC_Add:
+				// 	Handle_Add();
+				// 	IncreasePC();
+				// 	return;
+	
+				// 	ASSERTNOTREACHED();
+				// 	break;
+
+				// case SC_ReadNum:
+				// 	DEBUG(dbgSys, "readnumok\n");
+				// 	int result = 0;
+				// 	kernel->machine->WriteRegister(2, (int)result);
+				// 	// IncreasePC();
+				// 	// return;
+				// 	return;
+				// 	ASSERTNOTREACHED();
+				// 	break;
+
+     			default:
+					cerr << "Unexpected system call " << type << "\n";
+					return;
+					break;
+    		}
+      		break;
+
+    	default:
+      		cerr << "Unexpected user mode exception" << (int)which << "\n";
+      		break;
     }
     ASSERTNOTREACHED();
 }
