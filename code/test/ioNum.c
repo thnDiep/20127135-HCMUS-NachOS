@@ -1,7 +1,7 @@
-/* readNum.c
+/* ioNum.c
  *	Simple program to test whether the systemcall interface works.
  *	
- *	Just do a readNum syscall that reads 1 number and returns this number.
+ *	Just do a ReadNum and PrintNum syscall.
  *
  */
 
@@ -11,6 +11,7 @@ int main(){
   int result;
   
   result = ReadNum();
+  PrintNum(result);
 
   Halt();
   /* not reached */

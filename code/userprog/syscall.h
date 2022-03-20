@@ -37,6 +37,7 @@
 
 #define SC_Add		    42
 #define SC_ReadNum  	43
+#define SC_PrintNum     44
 
 #ifndef IN_ASM
 
@@ -56,8 +57,11 @@ void Halt();
 // Add the two operants and return the result
 int Add(int op1, int op2);
 
-// Read the integer number and return this number or 0 (if invalid)
+// Read the integer number input by user and return this number or 0 (if invalid)
 int ReadNum();
+
+// Print the integer number to console
+void PrintNum(int number);
 
 /* Address space control operations: Exit, Exec, Execv, and Join */
 
@@ -105,8 +109,8 @@ typedef int OpenFileId;
  * the console device.
  */
 
-#define ConsoleInput	0  
-#define ConsoleOutput	1  
+// #define ConsoleInput	0  
+// #define ConsoleOutput	1  
  
 /* Create a Nachos file, with name "name" */
 /* Note: Create does not open the file.   */

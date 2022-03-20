@@ -20,11 +20,11 @@
 // Copyright (c) 1992-1996 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
-
 #include "copyright.h"
 #include "main.h"
 #include "syscall.h"
 #include "ksyscall.h"
+#include "synchconsole.h"
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -48,7 +48,8 @@
 //	is in machine.h.
 //----------------------------------------------------------------------
 	
-
+const int MAX_INT = 2147483647;
+const int MIN_INT = -2147483648;
 
 /* Modify return point */
 void IncreasePC(){
@@ -76,31 +77,95 @@ void Handle_Add(){
 }
 
 void Handle_ReadNum(){
-	DEBUG(dbgSys, "Read integer number \n");
-	int result = 0;
-	int length = 0;
-	const int MAX_LENGHT = 9;
-	char* buffer = new char [MAX_LENGHT + 1];
-	length = kernel->synchConsoleIn->Read(buffer, MAX_LENGHT);
-	bool isError = false;
+	DEBUG(dbgSys, "Read the integer number.\n");
 
-	for(int i = 0; i < length; i++){
-		if(buffer[i] >= '0' && buffer[i] <= '9'){
-			result = result * 10 + (int)buffer[i];
+	char input;					// Get input from console
+	int64_t result = 0;
+	int length = 0;				// Length of number
+	bool isError = false;
+	bool isFirstChar = true;
+	bool isNegative = false;
+
+	while((input = kernel->synchConsoleIn->GetChar()) != '\n'){
+		if(isFirstChar){
+			isFirstChar = false;
+			if(input == '-'){
+				isNegative = true;
+				continue;
+			}
 		}
-		else{
+
+		length++;
+		// Check input
+		if(input >= '0' && input <= '9')
+			result = result * 10 + (input - '0');
+		else
 			isError = true;
-			break;
-		}
 	}
+
+	if(isNegative)
+		result *= -1;
+
+	// Check the value of the number which was input
+	if(length > 10)
+		isError = true;
+	else
+		if(result < MIN_INT || result > MAX_INT)
+			isError = true;
 
 	if(isError){
 		DEBUG(dbgSys, "Error (Invalid input): This is not a integer number.\n");
 		result = 0;
 	}
 
-	delete buffer;
+	DEBUG(dbgSys, "Input the number returning with " << result << "\n");
+	/* Prepare Result */
 	kernel->machine->WriteRegister(2, (int)result);
+}
+
+void Handle_PrintNum(){
+	int number = kernel->machine->ReadRegister(4);
+	DEBUG(dbgSys, "Print the number " << number << " to console.\n");
+
+	if(number == 0){
+		kernel->synchConsoleOut->PutChar('0');
+		kernel->synchConsoleOut->PutChar('\n');
+		return;
+	}
+
+	bool isNegative = false;
+	int length = 0;
+
+	if(number < 0){
+		isNegative = true;
+		number *= -1;
+		length = 1;
+	}
+
+	int temp_number = number;
+	while(temp_number){
+		temp_number /= 10;
+		length++;
+	}
+
+	char* result = new char [length + 1];
+	result[length] = '\0';
+
+	int pos = length - 1;
+	while(number){
+		result[pos] = number % 10 + '0';
+		number /= 10;
+		pos--;
+	}
+
+	if(isNegative)
+		result[0] = '-';
+
+	for(int i = 0; i < length; i++){
+		kernel->synchConsoleOut->PutChar(result[i]);
+	}
+	kernel->synchConsoleOut->PutChar('\n');
+	delete result;
 }
 
 void ExceptionHandler(ExceptionType which){
@@ -174,6 +239,13 @@ void ExceptionHandler(ExceptionType which){
 					ASSERTNOTREACHED();
 					break;
 
+				case SC_PrintNum:
+					Handle_PrintNum();
+					IncreasePC();
+					return;
+					
+					ASSERTNOTREACHED();
+					break;
      			default:
 					cerr << "Unexpected system call " << type << "\n";
 					break;
