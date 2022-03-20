@@ -36,7 +36,7 @@
 #define SC_ThreadJoin   15
 
 #define SC_Add		    42
-#define SC_ReadNum  	16
+#define SC_ReadNum  	43
 
 #ifndef IN_ASM
 
