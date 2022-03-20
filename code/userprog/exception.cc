@@ -75,6 +75,33 @@ void Handle_Add(){
 	kernel->machine->WriteRegister(2, (int)result);
 }
 
+void Handle_ReadNum(){
+	DEBUG(dbgSys, "Read integer number \n");
+	int result = 0;
+	int length = 0;
+	const int MAX_LENGHT = 9;
+	char* buffer = new char [MAX_LENGHT + 1];
+	length = kernel->synchConsoleIn->Read(buffer, MAX_LENGHT);
+	bool isError = false;
+
+	for(int i = 0; i < length; i++){
+		if(buffer[i] >= '0' && buffer[i] <= '9'){
+			result = result * 10 + (int)buffer[i];
+		}
+		else{
+			isError = true;
+			break;
+		}
+	}
+
+	if(isError){
+		DEBUG(dbgSys, "Error (Invalid input): This is not a integer number.\n");
+		result = 0;
+	}
+
+	delete buffer;
+	kernel->machine->WriteRegister(2, (int)result);
+}
 
 void ExceptionHandler(ExceptionType which){
     int type = kernel->machine->ReadRegister(2);
@@ -121,7 +148,8 @@ void ExceptionHandler(ExceptionType which){
 			break;
 
     	case SyscallException:
-      		switch(type) {
+		{
+			switch(type) {
       			case SC_Halt:
 					DEBUG(dbgSys, "Shutdown, initiated by user program.\n");
 
@@ -139,25 +167,23 @@ void ExceptionHandler(ExceptionType which){
 					break;
 
 				case SC_ReadNum:
-					DEBUG(dbgSys, "readnumok\n");
-					int result = 0;
-					kernel->machine->WriteRegister(2, (int)result);
-					// IncreasePC();
-					// return;
+					Handle_ReadNum();
+					IncreasePC();
 					return;
+					
 					ASSERTNOTREACHED();
 					break;
 
      			default:
 					cerr << "Unexpected system call " << type << "\n";
-					return;
 					break;
     		}
-      		break;
+		}	
+			break;
 
-    	default:
-      		cerr << "Unexpected user mode exception" << (int)which << "\n";
-      		break;
+		default:
+			cerr << "Unexpected user mode exception" << (int)which << "\n";
+			break;
     }
     ASSERTNOTREACHED();
 }
