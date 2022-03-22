@@ -181,6 +181,24 @@ clean:
 distclean: clean
 	$(RM) -f $(PROGRAMS)
 
+help.o: help.c
+	$(CC) $(CFLAGS) -c help.c
+help: help.o start.o
+	$(LD) $(LDFLAGS) start.o help.o -o help.coff
+	../bin/coff2noff help.coff help
+
+ascii.o: ascii.c
+	$(CC) $(CFLAGS) -c ascii.c
+ascii: ascii.o start.o
+	$(LD) $(LDFLAGS) start.o ascii.o -o ascii.coff
+	../bin/coff2noff ascii.coff ascii
+
+SortBubble.o: SortBubble.c
+	$(CC) $(CFLAGS) -c SortBubble.c
+SortBubble: SortBubble.o start.o
+	$(LD) $(LDFLAGS) start.o SortBubble.o -o SortBubble.coff
+	../bin/coff2noff SortBubble.coff SortBubble.
+
 unknownhost:
 	@echo Host type could not be determined.
 	@echo make is terminating.

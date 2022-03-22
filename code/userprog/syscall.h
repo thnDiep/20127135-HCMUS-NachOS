@@ -42,6 +42,10 @@
 #define SC_PrintChar    46
 #define SC_RandomNum    47
 
+#define SC_PrintString  61
+#define SC_Seek         62
+#define SC_Remove       63
+
 #ifndef IN_ASM
 
 /* The system call interface.  These are the operations the Nachos
@@ -74,6 +78,8 @@ void PrintChar(char character);
 
 // Random and return the positive integer number
 int RandomNum();
+
+void PrintString (char buffer[]);
 
 /* Address space control operations: Exit, Exec, Execv, and Join */
 

@@ -51,6 +51,25 @@
 const int MAX_INT = 2147483647;
 const int MIN_INT = -2147483648;
 
+char* User2System(int virtAddr, int limit){
+	int i; // index
+	int oneChar;
+	char* kernelBuf = NULL;
+	kernelBuf = new char[limit + 1]; //need for terminal string
+	if (kernelBuf == NULL)
+		return kernelBuf;
+	memset(kernelBuf, 0, limit + 1);
+	// printf("\n Filename u2s:");
+	for(int i = 0; i < limit; i++){
+		kernel->machine->ReadMem(virtAddr+i, 1, &oneChar); // Doc 1 ki tu tai dia chi virtAddr + i trong thanh RAM
+		kernelBuf[i] = (char)oneChar; // push ki tu nay xuong System space
+		//printf("%c", kernelBuf[i]);
+		if(oneChar == 0) // Neu oneChar == 0: het ki tu thi break
+			break;	
+	}
+	return kernelBuf;
+}
+
 /* Modify return point */
 void IncreasePC(){
 	  /* set previous programm counter (debugging only)*/
@@ -198,6 +217,48 @@ void Handle_RandomNum(){
 	kernel->machine->WriteRegister(2, result);
 }
 
+void Handle_PrintString() {
+	/*int virtAddr = kernel->machine->ReadRegister(4);
+	char* buffer = User2System(virtAddr, 255);
+	int length = 0;
+	while (buffer[length] != 0) 
+		length++;
+
+	synchConsole->Write(buffer, length + 1);
+	delete buffer; */
+}
+
+void Handle_Seek() {
+	int pos = kernel->machine->ReadRegister(4); 
+	int fileID = kernel->machine->ReadRegister(5); 
+
+	if (fileID < 0 || fileID > 14 || kernel->fileSystem->openf[fileID] == NULL) {
+		DEBUG(dbgSys, "\nID is out of search range or ID is doesn't exist.");
+		kernel->machine->WriteRegister(2, -1);
+		return;
+	}
+	//Seek tren console
+	if (fileID == 0 || fileID == 1)	{
+		DEBUG(dbgSys, "\nError!!Can't call Seek on the console.");
+		kernel->machine->WriteRegister(2, -1);
+		return;
+	}
+	int Len = kernel->fileSystem->openf[fileID]->Length();
+	pos = (pos == -1) ? Len : pos; 
+
+	if (pos > Len || pos < 0) {
+		kernel->machine->WriteRegister(2, -1);
+	}
+	else {
+		kernel->fileSystem->openf[fileID]->Seek(pos);
+		kernel->machine->WriteRegister(2, pos);
+	}
+}
+
+void Handle_Remove() {
+
+}
+
 void ExceptionHandler(ExceptionType which){
     int type = kernel->machine->ReadRegister(2);
 
@@ -300,6 +361,15 @@ void ExceptionHandler(ExceptionType which){
 
 					ASSERTNOTREACHED();
 					break;
+
+				case SC_Seek:
+					Handle_Seek();
+					IncreasePC();
+					return; 
+
+					ASSERTNOTREACHED();
+					break;
+
      			default:
 					cerr << "Unexpected system call " << type << "\n";
 					break;
