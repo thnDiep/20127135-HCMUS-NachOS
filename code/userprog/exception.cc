@@ -51,7 +51,7 @@
 const int MAX_INT = 2147483647;
 const int MIN_INT = -2147483648;
 
-char* User2System(int virtAddr, int limit){
+/*char* User2System(int virtAddr, int limit){
 	int i; // index
 	int oneChar;
 	char* kernelBuf = NULL;
@@ -68,7 +68,7 @@ char* User2System(int virtAddr, int limit){
 			break;	
 	}
 	return kernelBuf;
-}
+}*/
 
 /* Modify return point */
 void IncreasePC(){
@@ -228,32 +228,35 @@ void Handle_PrintString() {
 	delete buffer; */
 }
 
-void Handle_Seek() {
+/*void Handle_Seek() {
+	char *tmp;
 	int pos = kernel->machine->ReadRegister(4); 
-	int fileID = kernel->machine->ReadRegister(5); 
+	OpenFileId fileID = kernel->machine->ReadRegister(5); 
 
-	if (fileID < 0 || fileID > 14 || kernel->fileSystem->openf[fileID] == NULL) {
+	*tmp = (char) fileID;
+	if (fileID < 0 || fileID > 14 || kernel->fileSystem->Open(tmp) == NULL) {
 		DEBUG(dbgSys, "\nID is out of search range or ID is doesn't exist.");
 		kernel->machine->WriteRegister(2, -1);
 		return;
-	}
-	//Seek tren console
-	if (fileID == 0 || fileID == 1)	{
-		DEBUG(dbgSys, "\nError!!Can't call Seek on the console.");
-		kernel->machine->WriteRegister(2, -1);
-		return;
-	}
-	int Len = kernel->fileSystem->openf[fileID]->Length();
-	pos = (pos == -1) ? Len : pos; 
+	}*/
+	// //Seek tren console
+	// if (fileID == 0 || fileID == 1)	{
+	// 	DEBUG(dbgSys, "\nError!!Can't call Seek on the console.");
+	// 	kernel->machine->WriteRegister(2, -1);
+	// 	return;
+	// }
+	// int Len = kernel->fileSystem->Open(tmp)->Length();
+	// pos = (pos == -1) ? Len : pos; 
 
-	if (pos > Len || pos < 0) {
-		kernel->machine->WriteRegister(2, -1);
-	}
-	else {
-		kernel->fileSystem->openf[fileID]->Seek(pos);
-		kernel->machine->WriteRegister(2, pos);
-	}
-}
+	// if (pos > Len || pos < 0) {
+	// 	kernel->machine->WriteRegister(2, -1);
+	// }
+	// else {
+	// 	OpenFile* temp = kernel->fileSystem->Open(tmp);
+	// 	temp->Seek(pos);
+	// 	kernel->machine->WriteRegister(2, pos);
+	// }
+//}
 
 void Handle_Remove() {
 
@@ -362,13 +365,13 @@ void ExceptionHandler(ExceptionType which){
 					ASSERTNOTREACHED();
 					break;
 
-				case SC_Seek:
+				/*case SC_Seek:
 					Handle_Seek();
 					IncreasePC();
 					return; 
 
 					ASSERTNOTREACHED();
-					break;
+					break;*/
 
      			default:
 					cerr << "Unexpected system call " << type << "\n";

@@ -112,7 +112,7 @@ ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = add halt shell matmult sort randomNum
+PROGRAMS = add halt shell matmult sort randomNum help ascii SortBubble Seek
 endif
 
 all: $(PROGRAMS)
@@ -185,19 +185,25 @@ help.o: help.c
 	$(CC) $(CFLAGS) -c help.c
 help: help.o start.o
 	$(LD) $(LDFLAGS) start.o help.o -o help.coff
-	../bin/coff2noff help.coff help
+	$(COFF2NOFF) help.coff help
 
 ascii.o: ascii.c
 	$(CC) $(CFLAGS) -c ascii.c
 ascii: ascii.o start.o
 	$(LD) $(LDFLAGS) start.o ascii.o -o ascii.coff
-	../bin/coff2noff ascii.coff ascii
+	$(COFF2NOFF) ascii.coff ascii
 
 SortBubble.o: SortBubble.c
 	$(CC) $(CFLAGS) -c SortBubble.c
 SortBubble: SortBubble.o start.o
 	$(LD) $(LDFLAGS) start.o SortBubble.o -o SortBubble.coff
-	../bin/coff2noff SortBubble.coff SortBubble.
+	$(COFF2NOFF) SortBubble.coff SortBubble
+
+Seek.o: Seek.c
+	$(CC) $(CFLAGS) -c Seek.c
+Seek: Seek.o start.o
+	$(LD) $(LDFLAGS) start.o Seek.o -o Seek.coff
+	$(COFF2NOFF) Seek.coff Seek
 
 unknownhost:
 	@echo Host type could not be determined.
