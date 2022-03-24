@@ -150,6 +150,48 @@ randomNum: randomNum.o start.o
 	$(LD) $(LDFLAGS) start.o randomNum.o -o randomNum.coff
 	$(COFF2NOFF) randomNum.coff randomNum
 
+ioString.o: ioString.c
+	$(CC) $(CFLAGS) -c ioString.c
+ioString: ioString.o start.o
+	$(LD) $(LDFLAGS) start.o ioString.o -o ioString.coff
+	$(COFF2NOFF) ioString.coff ioString
+
+createFile.o: createFile.c
+	$(CC) $(CFLAGS) -c createFile.c
+createFile: createFile.o start.o
+	$(LD) $(LDFLAGS) start.o createFile.o -o createFile.coff
+	$(COFF2NOFF) createFile.coff createFile
+
+OpenCloseFile.o: openCloseFile.c 
+	$(CC) $(CFLAGS) -C openCloseFile.c 
+openCloseFile: openCloseFile.o start.o
+	$(LD) $(LDFLAGS) start.o openCloseFile.o -o openCloseFile.coff
+	$(COFF2NOFF) openCloseFile.coff openCloseFile
+
+iofile.o: ioFile.c
+	$(CC) $(CFLAGS) -c ioFile.c
+ioFile: ioFile.o start.o
+	$(LD) $(LDFLAGS) start.o ioFile.o -o ioFile.coff
+	$(COFF2NOFF) ioFile.coff ioFile
+
+help.o: help.c
+	$(CC) $(CFLAGS) -c help.c
+help: help.o start.o
+	$(LD) $(LDFLAGS) start.o help.o -o help.coff
+	../bin/coff2noff help.coff help
+
+ascii.o: ascii.c
+	$(CC) $(CFLAGS) -c ascii.c
+ascii: ascii.o start.o
+	$(LD) $(LDFLAGS) start.o ascii.o -o ascii.coff
+	../bin/coff2noff ascii.coff ascii
+
+SortBubble.o: SortBubble.c
+	$(CC) $(CFLAGS) -c SortBubble.c
+SortBubble: SortBubble.o start.o
+	$(LD) $(LDFLAGS) start.o SortBubble.o -o SortBubble.coff
+	../bin/coff2noff SortBubble.coff SortBubble.
+
 shell.o: shell.c
 	$(CC) $(CFLAGS) -c shell.c
 shell: shell.o start.o
@@ -180,24 +222,6 @@ clean:
 
 distclean: clean
 	$(RM) -f $(PROGRAMS)
-
-help.o: help.c
-	$(CC) $(CFLAGS) -c help.c
-help: help.o start.o
-	$(LD) $(LDFLAGS) start.o help.o -o help.coff
-	../bin/coff2noff help.coff help
-
-ascii.o: ascii.c
-	$(CC) $(CFLAGS) -c ascii.c
-ascii: ascii.o start.o
-	$(LD) $(LDFLAGS) start.o ascii.o -o ascii.coff
-	../bin/coff2noff ascii.coff ascii
-
-SortBubble.o: SortBubble.c
-	$(CC) $(CFLAGS) -c SortBubble.c
-SortBubble: SortBubble.o start.o
-	$(LD) $(LDFLAGS) start.o SortBubble.o -o SortBubble.coff
-	../bin/coff2noff SortBubble.coff SortBubble.
 
 unknownhost:
 	@echo Host type could not be determined.

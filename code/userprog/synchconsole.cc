@@ -36,6 +36,49 @@ SynchConsoleInput::~SynchConsoleInput()
     delete waitFor;
 }
 
+
+int
+SynchConsoleInput::Read(char []buffer, int length)
+{
+	int loop;
+	int eolncond = FALSE;
+	char ch;
+
+	for (loop = 0; loop < length; loop++)
+		buffer[loop] = 0;
+
+	loop = 0;
+
+	RLineBlock->P();				// Block for a read line
+
+	while ( (loop < length) && (eolncond == FALSE) )
+	{
+		do
+		{
+			synchReadAvail->P();		// Block for single char
+			ch = cons->GetChar();		// Get a char (could)
+		} while ( ch == EOF);
+
+		if ( (ch == '\012') || (ch == '\001') )
+		{
+			eolncond = TRUE;
+		}
+		else
+		{
+			buffer[loop] = ch;		// Put the char in buf
+			loop++;				// Auto inc
+		}
+	}
+
+	RLineBlock->V();				// UnBLock
+
+	if (ch == '\001')				// CTRL-A Returns -1
+		return -1;				// For end of stream
+	else
+		return loop;				// How many did we rd
+}
+
+
 //----------------------------------------------------------------------
 // SynchConsoleInput::GetChar
 //      Read a character typed at the keyboard, waiting if necessary.
@@ -90,6 +133,25 @@ SynchConsoleOutput::~SynchConsoleOutput()
     delete consoleOutput; 
     delete lock; 
     delete waitFor;
+}
+
+int
+SynchConsoleOutput::Write(char[] buffer, int length)
+{
+    int loop;			// General purpose counter
+
+	WLineBlock->P();			// Block for the line
+
+//	printf("[%s]:\n",currentThread->getName());	//DEBUG: Print thread
+
+	for (loop = 0; loop < length; loop++)
+	{
+		cons->PutChar(buffer[loop]);		// Write and wait
+		synchWriteAvail->P();			// Block for a character
+	}
+
+	WLineBlock->V();				// Free Up
+	return numBytes;				// Return the bytes out
 }
 
 //----------------------------------------------------------------------
