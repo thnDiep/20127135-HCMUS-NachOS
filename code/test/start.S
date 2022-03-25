@@ -98,6 +98,14 @@ RandomNum:
 	j 	$31
 	.end RandomNum
 
+	.globl 	ReadString
+	.ent	ReadString
+ReadString:
+	addiu $2,$0,SC_ReadString
+	syscall
+	j 	$31
+	.end ReadString
+
 	.globl 	PrintString
 	.ent	PrintString
 PrintString:
@@ -106,7 +114,7 @@ PrintString:
 	j 	$31
 	.end PrintString
 
-	.globl Exit
+	.globl 	Exit
 	.ent	Exit
 Exit:
 	addiu $2,$0,SC_Exit
@@ -114,7 +122,7 @@ Exit:
 	j	$31
 	.end Exit
 
-	.globl Exec
+	.globl 	Exec
 	.ent	Exec
 Exec:
 	addiu $2,$0,SC_Exec
@@ -122,7 +130,7 @@ Exec:
 	j	$31
 	.end Exec
 
-	.globl ExecV
+	.globl 	ExecV
 	.ent	ExecV
 ExecV:
 	addiu $2,$0,SC_ExecV
@@ -130,7 +138,7 @@ ExecV:
 	j	$31
 	.end ExecV
 
-	.globl Join
+	.globl 	Join
 	.ent	Join
 Join:
 	addiu $2,$0,SC_Join
@@ -138,7 +146,7 @@ Join:
 	j	$31
 	.end Join
 
-	.globl Create
+	.globl	Create
 	.ent	Create
 Create:
 	addiu $2,$0,SC_Create
@@ -146,7 +154,7 @@ Create:
 	j	$31
 	.end Create
 
-	.globl Remove
+	.globl 	Remove
 	.ent	Remove
 Remove:
 	addiu $2,$0,SC_Remove
@@ -154,7 +162,7 @@ Remove:
 	j	$31
 	.end Remove
 
-	.globl Open
+	.globl 	Open
 	.ent	Open
 Open:
 	addiu $2,$0,SC_Open
@@ -162,7 +170,7 @@ Open:
 	j	$31
 	.end Open
 
-	.globl Read
+	.globl 	Read
 	.ent	Read
 Read:
 	addiu $2,$0,SC_Read
@@ -170,7 +178,7 @@ Read:
 	j	$31
 	.end Read
 
-	.globl Write
+	.globl 	Write
 	.ent	Write
 Write:
 	addiu $2,$0,SC_Write
@@ -178,7 +186,7 @@ Write:
 	j	$31
 	.end Write
 
-	.globl Close
+	.globl 	Close
 	.ent	Close
 Close:
 	addiu $2,$0,SC_Close

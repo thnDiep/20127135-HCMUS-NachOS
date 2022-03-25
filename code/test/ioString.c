@@ -1,11 +1,11 @@
 #include "syscall.h"
 
 int main(){
-  char[] result;
+  char str[255];
   int length = 0;
   
-  ReadString(result, length);
-  PrintString(result);
+  ReadString(str, ReadNum());
+  PrintString(str);
 
   Halt();
   /* not reached */

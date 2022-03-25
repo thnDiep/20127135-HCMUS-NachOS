@@ -43,8 +43,6 @@
 #define SC_RandomNum    47
 #define SC_ReadString   48
 #define SC_PrintString  49
-#define SC_Seek         50
-#define SC_Remove       51
 
 #ifndef IN_ASM
 
@@ -79,10 +77,11 @@ void PrintChar(char character);
 // Random and return the positive integer number
 int RandomNum();
 
-void ReadString( char[] buffer, int length);
+// Read the string input by user
+char* ReadString(char buffer[], int length);
 
-void PrintString(char[] buffer);
-
+// Print the string to console
+void PrintString(char buffer[]);
 
 /* Address space control operations: Exit, Exec, Execv, and Join */
 

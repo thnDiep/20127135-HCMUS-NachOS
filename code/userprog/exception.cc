@@ -25,7 +25,6 @@
 #include "syscall.h"
 #include "ksyscall.h"
 #include "synchconsole.h"
-#include "filesys.h"
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -51,30 +50,9 @@
 	
 const int MAX_INT = 2147483647;
 const int MIN_INT = -2147483648;
+const int MAX_LENGTH_STRING = 255;
 
-<<<<<<< HEAD
-/*char* User2System(int virtAddr, int limit){
-	int i; // index
-	int oneChar;
-	char* kernelBuf = NULL;
-	kernelBuf = new char[limit + 1]; //need for terminal string
-	if (kernelBuf == NULL)
-		return kernelBuf;
-	memset(kernelBuf, 0, limit + 1);
-	// printf("\n Filename u2s:");
-	for(int i = 0; i < limit; i++){
-		kernel->machine->ReadMem(virtAddr+i, 1, &oneChar); // Doc 1 ki tu tai dia chi virtAddr + i trong thanh RAM
-		kernelBuf[i] = (char)oneChar; // push ki tu nay xuong System space
-		//printf("%c", kernelBuf[i]);
-		if(oneChar == 0) // Neu oneChar == 0: het ki tu thi break
-			break;	
-	}
-	return kernelBuf;
-}*/
-
-=======
->>>>>>> d9da9feedd9f2a5ea27e593ab20e72f2e5f699fa
-/* Modify return point */
+// Modify return point 
 void IncreasePC(){
 	  /* set previous programm counter (debugging only)*/
 	  kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
@@ -86,48 +64,49 @@ void IncreasePC(){
 	  kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
 }
 
-// Input: - User space address (int) 
-// - Limit of buffer (int) 
-// Output:- Buffer (char*) 
-// Purpose: Copy buffer from User memory space to System memory space 
-char* User2System(int virtAddr,int limit) 
+// Moving data from user space to kernel space
+char* UserToKernel(int virtAddr, int limit)
 { 
- 	int i;// index 
- 	int oneChar; 
- 	char* kernelBuf = NULL; 
- 	kernelBuf = new char[limit +1];//need for terminal string 
+	// Create kernel space to receive data from user space
+ 	char* kernelBuf = NULL; // Kernel space
+ 	kernelBuf = new char[limit + 1];
+	 
  	if (kernelBuf == NULL) 
  		return kernelBuf; 
- 	memset(kernelBuf,0,limit+1); 
- 	//printf("\n Filename u2s:"); 
- 	for (i = 0 ; i < limit ;i++) 
+
+ 	memset(kernelBuf, 0, limit + 1); 
+
+	// Move data
+	int character;
+ 	for (int i = 0; i < limit; i++) 
  	{ 
- 		machine->ReadMem(virtAddr+i,1,&oneChar); 
- 		kernelBuf[i] = (char)oneChar; 
- 		//printf("%c",kernelBuf[i]); 
- 		if (oneChar == 0) 
- 			break; 
+ 		kernel->machine->ReadMem(virtAddr + i, 1, &character); 
+ 		kernelBuf[i] = (char)character;
+ 		// if (character == 0) 
+ 		// 	break; 
  	} 
  	return kernelBuf; 
 } 
 
-
-// Input: - User space address (int)
-// 	- Limit of buffer (int)
-// 	- Buffer (char[])
-// Output:- Number of bytes copied (int)
-// Purpose: Copy buffer from System memory space to User memory space
-int System2User(int virtAddr,int len,char* buffer)
+// Moving data from kernel space to user space
+int KernelToUser(int virtAddr, int len, char* buffer)
 {
-	if (len < 0) return -1;
-	if (len == 0)return len;
+	// If data of kernel space invalid or empty
+	if (len < 0) 
+		return -1;
+	if (len == 0)
+		return len;
+
+	// Move data
 	int i = 0;
-	int oneChar = 0 ;
-	do{
-		oneChar = (int)buffer[i];
-		machine->WriteMem(virtAddr+i,1,oneChar);
+	int character = 0;
+	// Trong chuỗi có quyền có ký tự 0 nên không dùng character == 0 thì ngắt được
+	while(i < len){
+		character = (int)buffer[i];
+		kernel->machine->WriteMem(virtAddr + i, 1, character);
 		i++;
-	}while(i < len && oneChar != 0);
+	}
+
 	return i;
 }
 
@@ -187,6 +166,7 @@ void Handle_ReadNum(){
 	}
 
 	DEBUG(dbgSys, "Read the number returning with " << result << "\n");
+	
 	/* Prepare Result */
 	kernel->machine->WriteRegister(2, (int)result);
 }
@@ -237,13 +217,15 @@ void Handle_PrintNum(){
 }
 
 void Handle_ReadChar(){
-	DEBUG(dbgSys, "Read a character.\n");
+	DEBUG(dbgSys, "Read the character.\n");
 
 	char result = kernel->synchConsoleIn->GetChar();
+	
 	if(result == '\n')
 		DEBUG(dbgSys, "Character is empty.\n")
 	else
 		DEBUG(dbgSys, "Read the charactor returning with " << result << "\n");
+	
 	/* Prepare Result */
 	kernel->machine->WriteRegister(2, result);
 }
@@ -266,94 +248,123 @@ void Handle_RandomNum(){
 	kernel->machine->WriteRegister(2, result);
 }
 
-
+// Mới chỉnh sửa read/print được bình thường chưa xét các trường hợp ngoại lệ 
 void Handle_ReadString() {
-	DEBUG(dbgSys, "Read a string.\n");
+	DEBUG(dbgSys, "Read the string.\n");
 
-	int addr = kernel->machine->ReadRegister(4);     // address of string from register4
-	int length = kernel->machine->ReadRegister(5); //length of string from register5
-	char* buffer = User2System(addr, length);
+	int addr = kernel->machine->ReadRegister(4);	// address of string from register4
+	int length = kernel->machine->ReadRegister(5);	// length of string from register5
+	char* buffer = new char[length + 1];
 
-	int s = kernel->synchConsoleIn->Read(buffer, length);
-	System2User(addr, s, buffer);
+	char input;
+	int pos = 0;
+	while((input = kernel->synchConsoleIn->GetChar()) != '\n'){
+		buffer[pos] = input;
+		pos++;
+		if(pos >= length)
+			break;
+	}
+
+	KernelToUser(addr, length, buffer);
 	delete[] buffer;
 }
-
-
 
 void Handle_PrintString() {
+	DEBUG(dbgSys, "Print the string.\n");
 
-	DEBUG(dbgSys, "Print a string.\n");
 	int addr = kernel->machine->ReadRegister(4);
+
+	char* buffer = UserToKernel(addr, MAX_LENGTH_STRING);
+
+	// Count the length of the string
 	int length = 0;
-	char* buffer = User2System(addr, 255);
-	while (buffer[length] != '\0' && buffer[length] != '\n' && buffer[length] != 0 ) {
+	while (buffer[length] != '\0')
 		length++;
-	}
-	buffer[length]='\0';
-	kernel->synchConsoleOut->Write(buffer, length);
+
+	// Print the string
+	for(int i = 0; i< length; i++)
+		kernel->synchConsoleOut->PutChar(buffer[i]);
+
 	delete[] buffer;
 }
 
-void Handle_Create() {		 //name: address of memory in user space 
-	DEBUG(dbgSys, "Create a file.\n");
-	int addr = kernel->machine->ReadRegister(4);  	//read addr of name's file
-	int length = 32
-	char* name = User2System(addr, length);
-	if (strlen(name) == 0) {  //empty file
-		DEBUG( dbgSys, "File is empty.\n");
-		kernel->machine->WriteRegister(2,-1);
-	}
-	else if (name == NULL) {
-		DEBUG(dbgSys, "Can't read the file\n");
-		kernel->machine->WriteRegister(2,-1);
+void Handle_Create() {
+	DEBUG(dbgSys, "Create a new file.\n");
+
+	int addr = kernel->machine->ReadRegister(4);  	// read the address of name's file
+	// int length = 32;
+	
+	char* nameFile = UserToKernel(addr, MAX_LENGTH_STRING);
+
+	// Check the name of file
+	if (strlen(nameFile) == 0) {
+		DEBUG( dbgSys, "Filename is invalid.\n");
+		kernel->machine->WriteRegister(2, -1);
+		delete nameFile;
+		return;
 	}
 	
-	// reading file
-	if (!kernel->fileSystem->Create(name,0)) {  //error create file
-		DEBUG(dbgSys, "Error when create file\n");
-		kernel->machine->WriteRegister(2,-1);
+	if (nameFile == NULL) {
+		DEBUG(dbgSys, "Can't read the file.\n");
+		kernel->machine->WriteRegister(2, -1);
+		delete nameFile;
+		return;
 	}
-	else {
-		kernel->machine->WriteRegister(2,0);
+
+	// Craete file
+	if (!kernel->fileSystem->Create(nameFile)) {	// error create file
+		DEBUG(dbgSys, "Error when create file.\n");
+		kernel->machine->WriteRegister(2, -1);
 	}
-	delete[] name;
-}
-
-
-void Handle_Open() {
-	int addr = kernel->machine->ReadRegister(4);   //give the address of the name
-	char* name = User2System(addr, 32);
-
-	if ( !kernel->fileSystem->Open(name)) {
-		DEBUG(dbgSys, "Can't open the file\n");
-		kernel->machine->WriteRegister(2,-1);
-	}
-	else {
-		DEBUG(dbgSys, "The file was opened\n");
+	else 
 		kernel->machine->WriteRegister(2, 0);
-	}
+	delete nameFile;
 }
 
+// void Handle_Open() {
+// 	int addr = kernel->machine->ReadRegister(4);	// read the address of name's file
+// 	int type = kernel->machine->ReadRegister(5);	// O
+// 	// char* name = User2System(addr, 32);
+// 	char* nameFile = UserToKernel(addr, MAX_LENGTH_STRING);
 
-void Handle_Close() {
-	OpenFileId id;
-	id = kernel->machine->ReadRegister(4);   //give the address of the id
+// 	// Vì đề kêu open trả về OpenFileID
+// 	// if (!kernel->fileSystem->Open(nameFile)) {
+// 	// 	DEBUG(dbgSys, "Can't open the file.\n");
+// 	// 	kernel->machine->WriteRegister(2, -1);
+// 	// }
+// 	// else {
+// 	// 	DEBUG(dbgSys, "The file was successfully opened.\n");
+// 	// 	kernel->machine->WriteRegister(2, 0);
+// 	// }
+
+// 	if (!kernel->fileSystem->Open(nameFile)) {
+// 		DEBUG(dbgSys, "Can't open the file.\n");
+// 		kernel->machine->WriteRegister(2, -1);
+// 	}
+// 	else {
+// 		DEBUG(dbgSys, "The file was successfully opened.\n");
+// 		kernel->machine->WriteRegister(2, addr);
+// 	}
+// 	delete nameFile;
+// }
+
+// void Handle_Close() {
+// 	OpenFileId FileId = kernel->machine->ReadRegister(4);   // give the address of the id
 	
-	if (kernel->fileSystem->Open(id) == NULL) {
-		kernel->machine->WriteRegister(2,-1);
-	}
-	else {
-		delete kernel->fileSystem->Open(id);
-		kernel->fileSystem->Open(id)=NULL;
-		kernel->machine->WriteRegister(2,0);
-	}
-}
+// 	if (kernel->fileSystem->Open(FileId) == NULL) {
+// 		kernel->machine->WriteRegister(2, -1);
+// 	}
+// 	else {
+// 		delete kernel->fileSystem->Open(FileId);
+// 		kernel->fileSystem->Open(FileId) = NULL;
+// 		kernel->machine->WriteRegister(2, 0);
+// 	}
+// }
 
 
-void Handle_Read(char* buffer, int size, OpenFileId id) {
+// void Handle_Read(char* buffer, int size, OpenFileId id) {
 
-}
+// }
 
 /*void Handle_Seek() {
 	char *tmp;
@@ -493,55 +504,49 @@ void ExceptionHandler(ExceptionType which){
 					break;
 				
 				case SC_ReadString:
-					char[] buffer;
-					int length = 0;
-					Handle_ReadString(buffer, length);
+					Handle_ReadString();
 					IncreasePC();
 					return;
 
 					ASSERTNOTREACHED();
 					break;
 				
-				case SC_PrintString():
-					char[] buffer;
-					Handle_PrintString(buffer);
+				case SC_PrintString:
+					Handle_PrintString();
 					IncreasePC();
 					return;
 
 					ASSERTNOTREACHED();
 					break;
 
-				case SC_Create():
-					char* name;
-					Handle_Create(name);
+				case SC_Create:
+					Handle_Create();
 					IncreasePC();
 					return;
 
 					ASSERTNOTREACHED();
 					break;
 
-				case SC_Open():
-					char* name;
-					Handle_Open(name);
-					IncreasePC();
-					return;
+				// case SC_Open:
+				// 	Handle_Open();
+				// 	IncreasePC();
+				// 	return;
 
-<<<<<<< HEAD
-				/*case SC_Seek:
-					Handle_Seek();
-=======
-					ASSERTNOTREACHED();
-					break;
-				
-				case SC_Close():
-					OpenFileId id;
-					Handle_Close(id);
->>>>>>> d9da9feedd9f2a5ea27e593ab20e72f2e5f699fa
-					IncreasePC();
-					return;
+				// 	ASSERTNOTREACHED();
+				// 	break;
 
-					ASSERTNOTREACHED();
-					break;*/
+				// case SC_Close:
+				// 	Handle_Close();
+				// 	IncreasePC();
+				// 	return;
+
+				// 	ASSERTNOTREACHED();
+				// 	break;
+
+				// case SC_Seek:
+				// 	Handle_Seek();
+				// 	ASSERTNOTREACHED();
+				// 	break;
 
      			default:
 					cerr << "Unexpected system call " << type << "\n";

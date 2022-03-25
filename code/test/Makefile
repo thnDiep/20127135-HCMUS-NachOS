@@ -112,7 +112,7 @@ ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = add halt shell matmult sort randomNum help ascii SortBubble Seek
+PROGRAMS = add halt shell matmult sort segments ioNum ioChar randomNum ioString createfile
 endif
 
 all: $(PROGRAMS)
@@ -156,11 +156,11 @@ ioString: ioString.o start.o
 	$(LD) $(LDFLAGS) start.o ioString.o -o ioString.coff
 	$(COFF2NOFF) ioString.coff ioString
 
-createFile.o: createFile.c
-	$(CC) $(CFLAGS) -c createFile.c
-createFile: createFile.o start.o
-	$(LD) $(LDFLAGS) start.o createFile.o -o createFile.coff
-	$(COFF2NOFF) createFile.coff createFile
+createfile.o: createfile.c
+	$(CC) $(CFLAGS) -c createfile.c
+createfile: createfile.o start.o
+	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
+	$(COFF2NOFF) createfile.coff createfile
 
 OpenCloseFile.o: openCloseFile.c 
 	$(CC) $(CFLAGS) -C openCloseFile.c 
@@ -223,33 +223,6 @@ clean:
 distclean: clean
 	$(RM) -f $(PROGRAMS)
 
-<<<<<<< HEAD
-help.o: help.c
-	$(CC) $(CFLAGS) -c help.c
-help: help.o start.o
-	$(LD) $(LDFLAGS) start.o help.o -o help.coff
-	$(COFF2NOFF) help.coff help
-
-ascii.o: ascii.c
-	$(CC) $(CFLAGS) -c ascii.c
-ascii: ascii.o start.o
-	$(LD) $(LDFLAGS) start.o ascii.o -o ascii.coff
-	$(COFF2NOFF) ascii.coff ascii
-
-SortBubble.o: SortBubble.c
-	$(CC) $(CFLAGS) -c SortBubble.c
-SortBubble: SortBubble.o start.o
-	$(LD) $(LDFLAGS) start.o SortBubble.o -o SortBubble.coff
-	$(COFF2NOFF) SortBubble.coff SortBubble
-
-Seek.o: Seek.c
-	$(CC) $(CFLAGS) -c Seek.c
-Seek: Seek.o start.o
-	$(LD) $(LDFLAGS) start.o Seek.o -o Seek.coff
-	$(COFF2NOFF) Seek.coff Seek
-
-=======
->>>>>>> d9da9feedd9f2a5ea27e593ab20e72f2e5f699fa
 unknownhost:
 	@echo Host type could not be determined.
 	@echo make is terminating.
