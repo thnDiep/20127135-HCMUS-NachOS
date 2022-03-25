@@ -12,10 +12,8 @@ if open successfully --> close the file
 
 int main() {
     char* name;
-    OpenFileId result;
 
-    result = Open(name);
-    if (result == 0) {
-        Close(result);
-    }
+    int fileId = Open(name);
+    Close(fileId);
+    Halt();
 }

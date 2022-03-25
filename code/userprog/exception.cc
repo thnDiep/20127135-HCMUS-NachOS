@@ -25,6 +25,7 @@
 #include "syscall.h"
 #include "ksyscall.h"
 #include "synchconsole.h"
+#include "filesys.h"
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -292,11 +293,10 @@ void Handle_Create() {
 	DEBUG(dbgSys, "Create a new file.\n");
 
 	int addr = kernel->machine->ReadRegister(4);  	// read the address of name's file
-	// int length = 32;
 	
 	char* nameFile = UserToKernel(addr, MAX_LENGTH_STRING);
 
-	// Check the name of file
+	// Check the name of files
 	if (strlen(nameFile) == 0) {
 		DEBUG( dbgSys, "Filename is invalid.\n");
 		kernel->machine->WriteRegister(2, -1);
@@ -321,45 +321,45 @@ void Handle_Create() {
 	delete nameFile;
 }
 
-// void Handle_Open() {
-// 	int addr = kernel->machine->ReadRegister(4);	// read the address of name's file
-// 	int type = kernel->machine->ReadRegister(5);	// O
-// 	// char* name = User2System(addr, 32);
-// 	char* nameFile = UserToKernel(addr, MAX_LENGTH_STRING);
+void Handle_Open() {
+	int addr = kernel->machine->ReadRegister(4);	// read the address of name's file
+	int type = kernel->machine->ReadRegister(5);
+    
+	char* nameFile = UserToKernel(addr, MAX_LENGTH_STRING);
 
-// 	// Vì đề kêu open trả về OpenFileID
-// 	// if (!kernel->fileSystem->Open(nameFile)) {
-// 	// 	DEBUG(dbgSys, "Can't open the file.\n");
-// 	// 	kernel->machine->WriteRegister(2, -1);
-// 	// }
-// 	// else {
-// 	// 	DEBUG(dbgSys, "The file was successfully opened.\n");
-// 	// 	kernel->machine->WriteRegister(2, 0);
-// 	// }
+	int free = kernel->fileSystem->FindFreeSlot();
+	if (free != -1) {  // khi slot trong
+		if (type == 0 || type == 1){
+			if ((kernel->fileSystem->openf[free] = kernel->fileSystem->Open(nameFile, type)) != NULL) {
+				kernel->machine->WriteRegister(2, free);
+			}
+		}
+		else if (type == 2 ) {
+			kernel->machine->WriteRegister(2,0);
+		}
+		else {
+			kernel->machine->WriteRegister(2,1);
+		}
+	}
+	kernel->machine->WriteRegister(2,-1);
 
-// 	if (!kernel->fileSystem->Open(nameFile)) {
-// 		DEBUG(dbgSys, "Can't open the file.\n");
-// 		kernel->machine->WriteRegister(2, -1);
-// 	}
-// 	else {
-// 		DEBUG(dbgSys, "The file was successfully opened.\n");
-// 		kernel->machine->WriteRegister(2, addr);
-// 	}
-// 	delete nameFile;
-// }
+	delete nameFile;
+}
 
-// void Handle_Close() {
-// 	OpenFileId FileId = kernel->machine->ReadRegister(4);   // give the address of the id
-	
-// 	if (kernel->fileSystem->Open(FileId) == NULL) {
-// 		kernel->machine->WriteRegister(2, -1);
-// 	}
-// 	else {
-// 		delete kernel->fileSystem->Open(FileId);
-// 		kernel->fileSystem->Open(FileId) = NULL;
-// 		kernel->machine->WriteRegister(2, 0);
-// 	}
-// }
+void Handle_Close() {
+	int fid =kernel->machine->ReadRegister(4); // Lay id cua file tu thanh ghi so 4
+	if (fid >= 0 && fid <= 14) // Chi xu li khi fid nam trong [0, 14]
+	{
+		if (kernel->fileSystem->openf[fid]) //neu mo file thanh cong
+		{
+			delete kernel->fileSystem->openf[fid]; // Xoa vung nho luu tru file
+			kernel->fileSystem->openf[fid] = NULL; // Gan vung nho NULL
+			kernel->machine->WriteRegister(2, 0);
+			return;
+		}
+	}
+	kernel->machine->WriteRegister(2, -1);
+}
 
 
 // void Handle_Read(char* buffer, int size, OpenFileId id) {
@@ -527,21 +527,21 @@ void ExceptionHandler(ExceptionType which){
 					ASSERTNOTREACHED();
 					break;
 
-				// case SC_Open:
-				// 	Handle_Open();
-				// 	IncreasePC();
-				// 	return;
+				case SC_Open:
+					Handle_Open();
+					IncreasePC();
+					return;
 
-				// 	ASSERTNOTREACHED();
-				// 	break;
+					ASSERTNOTREACHED();
+					break;
 
-				// case SC_Close:
-				// 	Handle_Close();
-				// 	IncreasePC();
-				// 	return;
+				case SC_Close:
+					Handle_Close();
+					IncreasePC();
+					return;
 
-				// 	ASSERTNOTREACHED();
-				// 	break;
+					ASSERTNOTREACHED();
+					break;
 
 				// case SC_Seek:
 				// 	Handle_Seek();

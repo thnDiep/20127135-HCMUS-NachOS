@@ -8,15 +8,18 @@
 #include "syscall.h"
 
 int main() {
-    char name[255];
+    // char name[255];
 
-    PrintString("Input the file's name: \n");
-    ReadString(name, 255);
+    // PrintString("Input the file's name: \n");
+    // ReadString(name, 255);
 
-    if(Create(name) == 0)
-        PrintString("Creating the new file successes!\n");
-    else
-        PrintString("Creating the new file fails!\n");
+    // if(Create(name) == 0)
+    //     PrintString("Creating the new file successes!\n");
+    // else
+    //     PrintString("Creating the new file fails!\n");
+
+    int id = Open("file1", 1);
+    Close(id);
     Halt();
     /*  Not reached  */
 }

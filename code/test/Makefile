@@ -162,7 +162,7 @@ createfile: createfile.o start.o
 	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
 	$(COFF2NOFF) createfile.coff createfile
 
-OpenCloseFile.o: openCloseFile.c 
+openCloseFile.o: openCloseFile.c 
 	$(CC) $(CFLAGS) -C openCloseFile.c 
 openCloseFile: openCloseFile.o start.o
 	$(LD) $(LDFLAGS) start.o openCloseFile.o -o openCloseFile.coff
