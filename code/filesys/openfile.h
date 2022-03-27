@@ -29,14 +29,13 @@
 							// See definitions listed under #else
 class OpenFile {
   public:
-
-  	//Khai bao bien type
+  	// Type of the opening file
   	int type;
 
-    OpenFile(int f) { file = f; currentOffset = 0; }					// open the file
-    OpenFile(int f, int t) { file = f; currentOffset = 0; type = t; }	// mo file voi tham so type
-	~OpenFile() { Close(file); }	
-										// close the file
+    OpenFile(int f) { file = f; currentOffset = 0; type = 0;}					// Default Constructor
+    OpenFile(int f, int t) { file = f; currentOffset = 0; type = t; }	// Constructor with parameter type
+	~OpenFile() { Close(file); }										// Destructor
+										
 	int Seek(int pos) {
 		Lseek(file, pos, 0);
 		currentOffset = Tell(file);
@@ -66,15 +65,18 @@ class OpenFile {
 		return numWritten;
 	}
 
-    // int Length() { Lseek(file, 0, 2); return Tell(file); }
-    
-	int Length() {
-		int len;
-		Lseek(file, 0, 2);
-		len = Tell(file);
-		Lseek(file, currentOffset, 0);
-		return len;
+    int Length() { 
+		Lseek(file, 0, 2); 
+		return Tell(file); 
 	}
+    
+	// int Length() {
+	// 	int len;
+	// 	Lseek(file, 0, 2);
+	// 	len = Tell(file);
+	// 	Lseek(file, currentOffset, 0);
+	// 	return len;
+	// }
 
 	int GetCurrentPos() { 
 		currentOffset = Tell(file); 
@@ -91,12 +93,17 @@ class FileHeader;
 
 class OpenFile {
   public:
- 	 //Khai bao bien type
-  	int type; 
-
+ 	// Type of the opening file
+  	int type;
+	// type 0 : only read
+	// type 1 : read and write
+	// type 2 : stdin
+	// type 3 : stdout
+	
     OpenFile(int sector);				// Open a file whose header is located
 										// at "sector" on the disk
-	OpenFile(int sector, int type);		// Open a file with parameter type		
+	OpenFile(int sector, int t);		// Open a file with parameter type		
+   
     ~OpenFile();						// Close the file
 
     void Seek(int position); 			// Set the position from which to 
@@ -118,14 +125,12 @@ class OpenFile {
 										// than the UNIX idiom -- lseek to 
 										// end of file, tell, lseek back 
 
-    int GetCurrentPos()					// Get the current position within the file
-	{
-		return seekPosition;
-	}
+    int GetCurrentPos();				// Get the current position within the file
 
   private:
     FileHeader *hdr;			// Header for this file 
     int seekPosition;			// Current position within the file
+	char* name;
 };
 
 #endif // FILESYS

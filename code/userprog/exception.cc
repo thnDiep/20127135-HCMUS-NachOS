@@ -52,8 +52,15 @@
 const int MAX_INT = 2147483647;
 const int MIN_INT = -2147483648;
 const int MAX_LENGTH_STRING = 255;
-const OpenFileID ConsoleInput = 0;
-const OpenFileID ConsoleOutput = 1;
+const OpenFileId ConsoleInput = 0;
+const OpenFileId ConsoleOutput = 1;
+
+enum typeFile{
+	read,
+	readAndWrite,
+	_stdin,
+	_stdout
+};
 
 // Modify return point 
 void IncreasePC(){
@@ -85,8 +92,8 @@ char* UserToKernel(int virtAddr, int limit)
  	{ 
  		kernel->machine->ReadMem(virtAddr + i, 1, &character); 
  		kernelBuf[i] = (char)character;
- 		// if (character == 0) 
- 		// 	break; 
+ 		if (character == 0) 
+ 			break; 
  	} 
  	return kernelBuf; 
 } 
@@ -285,256 +292,331 @@ void Handle_PrintString() {
 		length++;
 
 	// Print the string
-	for(int i = 0; i< length; i++)
+	for(int i = 0; i < length; i++)
 		kernel->synchConsoleOut->PutChar(buffer[i]);
 
 	delete[] buffer;
 }
 
+// ------------------------------------------------------------------------
+// int Create(char *name);
+// Use: To create a Nachos file, with name "name"
+// Return: 0 on success, -1 on failure
+// ------------------------------------------------------------------------
 void Handle_Create() {
 	DEBUG(dbgSys, "Create a new file.\n");
 
-	int addr = kernel->machine->ReadRegister(4);  	// read the address of name's file
+	int addr = kernel->machine->ReadRegister(4);  	// the address of name's file
 	
 	char* nameFile = UserToKernel(addr, MAX_LENGTH_STRING);
 
 	// Check the name of files
-	if (strlen(nameFile) == 0) {
-		DEBUG( dbgSys, "Filename is invalid.\n");
-		kernel->machine->WriteRegister(2, -1);
-		delete nameFile;
-		return;
+	{
+		if (strlen(nameFile) == 0){
+			DEBUG( dbgSys, "Filename is invalid.\n");
+			kernel->machine->WriteRegister(2, -1);
+			delete[] nameFile;
+			return;
+		}
+	
+		if (nameFile == NULL){
+			DEBUG(dbgSys, "Can't create the file.\n");
+			kernel->machine->WriteRegister(2, -1);
+			delete[] nameFile;
+			return;
+		}
 	}
 	
-	if (nameFile == NULL) {
-		DEBUG(dbgSys, "Can't create the file.\n");
-		kernel->machine->WriteRegister(2, -1);
-		delete nameFile;
-		return;
-	}
-
 	// Craete file
-	if (!kernel->fileSystem->Create(nameFile)) {	// error create file
+	if (!kernel->fileSystem->Create(nameFile)){
 		DEBUG(dbgSys, "Error when create file.\n");
 		kernel->machine->WriteRegister(2, -1);
 	}
-	else 
+	else{
+		DEBUG(dbgSys, "Create the file is success.\n");
 		kernel->machine->WriteRegister(2, 0);
-	delete nameFile;
+	}
+	delete[] nameFile;
 }
 
+//////////////////////////////////////////////////////////// HAVEN'T COMPLETE
 void Handle_Remove() {
 	// Chua xu ly truong hop file dang mo
-	int addr = kernel->machine->ReadRegister(4); 				// Lay dia chi cua ten file
+	int addr = kernel->machine->ReadRegister(4);	// the address of the name's file
 	char* nameFile = UserToKernel(addr, MAX_LENGTH_STRING);
-
 	kernel->fileSystem->Remove(nameFile);
-	delete nameFile;
+	delete[] nameFile;
 }
 
+// ------------------------------------------------------------------------
+// OpenFileId Open(char *name, int type);
+// Use: To open a file with the user selected type of the file
+// Return: OpenFileId on success, -1 on failure
+// ------------------------------------------------------------------------
 void Handle_Open() {
-	int addr = kernel->machine->ReadRegister(4);	// read the address of name's file
-	int type = kernel->machine->ReadRegister(5);
+	DEBUG(dbgSys, "---------- OPENING THE FILE ----------\n");
+	int addr = kernel->machine->ReadRegister(4);	// the address of the name's file
+	int type = kernel->machine->ReadRegister(5);	// the type of the file
     
 	char* nameFile = UserToKernel(addr, MAX_LENGTH_STRING);
 
-	int free = kernel->fileSystem->FindFreeSlot();
-	if (free != -1) {  // khi slot trong
-		if (type == 0 || type == 1){
-			if ((kernel->fileSystem->openf[free] = kernel->fileSystem->Open(nameFile, type)) != NULL) {
-				kernel->machine->WriteRegister(2, free);
-				DEBUG(dbgSys, "Opening the file returning with " << free << "\n");
-			}
-		}
-		else if (type == 2 ) {
-			kernel->machine->WriteRegister(2, 0);
-			DEBUG(dbgSys, "Opening the file returning with  0\n");
-		}
-		else {
-			kernel->machine->WriteRegister(2, 1);
-			DEBUG(dbgSys, "Opening the file returning with  1\n");
-		}
-	}
-	else{
-		kernel->machine->WriteRegister(2, -1);
-		DEBUG(dbgSys, "Opening the file returning with  -1\n");
-	}	
-	delete nameFile;
-}
+	int freeSlot = kernel->fileSystem->FindFreeSlot();
 
-void Handle_Close() {
-	int fid =kernel->machine->ReadRegister(4); // Lay id cua file tu thanh ghi so 4
-	if (fid >= 0 && fid <= 14) // Chi xu li khi fid nam trong [0, 14]
-	{
-		if (kernel->fileSystem->openf[fid]) //neu mo file thanh cong
+	if (freeSlot != -1){  							// The opening file table has free slot
+		switch (type)
 		{
-			delete kernel->fileSystem->openf[fid]; // Xoa vung nho luu tru file
-			kernel->fileSystem->openf[fid] = NULL; // Gan vung nho NULL
-			kernel->machine->WriteRegister(2, 0);
-			return;
-		}
-	}
-	kernel->machine->WriteRegister(2, -1);
-}
+		case typeFile::read:
+		case typeFile::readAndWrite:
+			kernel->fileSystem->openf[freeSlot] = kernel->fileSystem->Open(nameFile, type);
+													// Only open the file in this case
+			if (kernel->fileSystem->openf[freeSlot]) {
+				DEBUG(dbgSys, "Open a file returning with " << freeSlot << ".\n");
+				kernel->machine->WriteRegister(2, freeSlot);
+			}
+			else {
+				DEBUG(dbgSys, "The file doesn't exit.\n");
+				kernel->machine->WriteRegister(2, -1);
+			}	
+			break;
 
-void Handle_Read() {
-	int addr = kernel->machine->ReadRegister(4);
-	int size = kernel->machine->ReadRegister(5);
-	OpenFileID id = kernel->machine->ReadRegister(6);
+		case typeFile::_stdin:
+			DEBUG(dbgSys, "Open a file returning with " << ConsoleInput << ".\n");
+			kernel->machine->WriteRegister(2, ConsoleInput);
+			break;
+			
+		case typeFile::_stdout:
+			DEBUG(dbgSys, "Open a file returning with " << ConsoleOutput << ".\n");
+			kernel->machine->WriteRegister(2, ConsoleOutput);
+			break;
 
-	if(id < 0 || id > 14){
-		DEBUG(dbgSys, "Can't read the file\n");
-		kernel->machine->WriteRegister(2, -1);
-		return;
-	}
-
-	if(kernel->fileSystem->openf[id] == NULL){
-		DEBUG(dbgSys, "The file doesn't exit\n");
-		kernel->machine->WriteRegister(2, -1);
-		return;
-	}
-
-	if(kernel->fileSystem->openf[id]->type == 3){
-		DEBUG(dbgSys, "Can't read the stdout file\n");
-		kernel->machine->WriteRegister(2, -1);
-		return;
-	}
-
-	int pos = kernel->fileSystem->openf[id]->GetCurrentPos();
-	char* buffer = UserToKernel(addr, size);
-	// Xet truong hop doc file stdin (type quy uoc la 2)
-	if (kernel->fileSystem->openf[id]->type == 2){
-		// Su dung ham Read cua lop SynchConsole de tra ve so byte thuc su doc duoc
-		int byte = 0;
-		char input;
-		while((input = kernel->synchConsoleIn->GetChar()) != '\n'){
-		buffer[byte] = input;
-		byte++;
-		if(byte >= size)
+		default:
+			DEBUG(dbgSys, "Type of the file is invalid.\n");
 			break;
 		}
-		KernelToUser(addr, byte, buffer); // Copy chuoi tu vung nho System Space sang User Space voi bo dem buffer co do dai la so byte thuc su
-		kernel->machine->WriteRegister(2, byte); // Tra ve so byte thuc su doc duoc
-		delete buffer;
-		return;
 	}
-
-	// Xet truong hop doc file binh thuong thi tra ve so byte thuc su
-	if ((kernel->fileSystem->openf[id]->Read(buffer, size)) > 0)
-	{
-		// So byte thuc su = NewPos - OldPos
-		int NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
-		// Copy chuoi tu vung nho System Space sang User Space voi bo dem buffer co do dai la so byte thuc su 
-		KernelToUser(addr, NewPos - pos, buffer); 
-		kernel->machine->WriteRegister(2, NewPos - pos);
+	else{											// The opening file table is full
+		DEBUG(dbgSys, "Can't open the file.\n");
+		kernel->machine->WriteRegister(2, -1);
 	}
-	else
-	{
-		// Truong hop con lai la doc file co noi dung la NULL tra ve -2
-		//printf("\nDoc file rong.");
-		kernel->machine->WriteRegister(2, -2);
-	}
-	delete buffer;
+	delete[] nameFile;
 }
 
-void Handle_Write() {
-	int addr = kernel->machine->ReadRegister(4); 				// Lay dia chi cua tham so buffer tu thanh ghi so 4
-	int size = kernel->machine->ReadRegister(5); 			// Lay charcount tu thanh ghi so 5
-	OpenFileID id = kernel->machine->ReadRegister(6); 							// Lay id cua file tu thanh ghi so 6
+// ------------------------------------------------------------------------
+// int Close(OpenFileId id);
+// Use: To close the file
+// Return: 1 on success, -1 on failure
+// ------------------------------------------------------------------------
+void Handle_Close() {
+	DEBUG(dbgSys, "---------- CLOSING THE FILE ----------\n");
+	OpenFileId id = kernel->machine->ReadRegister(4);
 
-	// Kiem tra id cua file truyen vao co nam ngoai bang mo ta file khong
-	if (id < 0 || id > 14)
-	{
-		printf("\nKhong the write vi id nam ngoai bang mo ta file.");
+	if(id < 0 || id > kernel->fileSystem->maxOpeningFile - 1){
+													// id out of range of the opening file table [0; 10]
+		DEBUG(dbgSys, "ID of the file is out of range.\n");
 		kernel->machine->WriteRegister(2, -1);
-		return;
 	}
+	else{
+		if (kernel->fileSystem->openf[id]){		// If file is opening
+			delete kernel->fileSystem->openf[id];
+			kernel->fileSystem->openf[id] = NULL;
 
-	// Kiem tra file co ton tai khong
-	if (kernel->fileSystem->openf[id] == NULL)
+			DEBUG(dbgSys, "Close the file is success.\n");
+			kernel->machine->WriteRegister(2, 1);
+		}
+	}
+}
+
+// ------------------------------------------------------------------------
+// int Write(char *buffer, int size, OpenFileId id);
+// Use: To read "size" bytes from the open file into "buffer".
+// Return: the number of bytes actually read (read/ read and write/ stdin), -1 on failure, -2 if read the empty file
+// ------------------------------------------------------------------------
+void Handle_Read() {
+	DEBUG(dbgSys, "---------- READING THE FILE ----------\n");
+	int addr = kernel->machine->ReadRegister(4);	// the address of the name's file
+	int size = kernel->machine->ReadRegister(5);	// the size bytes of buffer
+	OpenFileId id = kernel->machine->ReadRegister(6);
+
+	// Possible errors
 	{
-		printf("\nKhong the write vi file nay khong ton tai.");
-		kernel->machine->WriteRegister(2, -1);
-		return;
-	}
+		if(id < 0 || id > kernel->fileSystem->maxOpeningFile - 1){	
+			DEBUG(dbgSys, "ID of the file is out of range.\n");
+			kernel->machine->WriteRegister(2, -1);
+			return;
+		}
 
-	// Xet truong hop ghi file only read (type quy uoc la 1) hoac file stdin (type quy uoc la 2) thi tra ve -1
-	if (kernel->fileSystem->openf[id]->type == 1 || kernel->fileSystem->openf[id]->type == 2)
-	{
-		printf("\nKhong the write file stdin hoac file only read.");
-		kernel->machine->WriteRegister(2, -1);
-		return;
-	}
+		if(kernel->fileSystem->openf[id] == NULL){
+			DEBUG(dbgSys, "The file hasn't opened yet.\n");
+			kernel->machine->WriteRegister(2, -1);
+			return;
+		}
 
-	int OldPos;
-	int NewPos;
-	char *buf;
-	OldPos = kernel->fileSystem->openf[id]->GetCurrentPos(); // Kiem tra thanh cong thi lay vi tri OldPos
-	buf = UserToKernel(addr, size); 						 // Copy chuoi tu vung nho User Space sang System Space voi bo dem buffer dai charcount
+		if(kernel->fileSystem->openf[id]->type == typeFile::_stdout){
+			DEBUG(dbgSys, "Can't read the stdout file.\n");
+			kernel->machine->WriteRegister(2, -1);
+			return;
+		}
+	}
 	
-	// Xet truong hop ghi file read & write (type quy uoc la 0) thi tra ve so byte thuc su
-	if (kernel->fileSystem->openf[id]->type == 0)
+
+	int posBeforeRead = kernel->fileSystem->openf[id]->GetCurrentPos();
+	char* buffer = new char[size];
+
+	// Read the stdin file
+	if (kernel->fileSystem->openf[id]->type == typeFile::_stdin){
+		// Read from console
+		int number_byte = 0;
+		char input;
+		while((input = kernel->synchConsoleIn->GetChar()) != '\n'){
+			buffer[number_byte] = input;
+			number_byte++;
+			if(number_byte >= size)
+				break;
+		}
+
+		KernelToUser(addr, number_byte, buffer);
+
+		DEBUG(dbgSys, "Read the file returning with " << number_byte << ".\n");
+		kernel->machine->WriteRegister(2, number_byte);
+
+		delete[] buffer;
+		return;
+	}
+
+	// Read the read/ read and write file
+	if ((kernel->fileSystem->openf[id]->Read(buffer, size)) > 0){
+		int posAfterRead = kernel->fileSystem->openf[id]->GetCurrentPos();
+		int number_byte = posAfterRead - posBeforeRead;
+
+		KernelToUser(addr, number_byte, buffer); 
+
+		DEBUG(dbgSys, "Read the file returning with " << number_byte << ".\n");
+		kernel->machine->WriteRegister(2, number_byte);
+	}
+	else{
+		DEBUG(dbgSys, "The file is empty.\n");
+		kernel->machine->WriteRegister(2, -2);
+	}
+
+	delete[] buffer;
+}
+
+// ------------------------------------------------------------------------
+// int Read(char *buffer, int size, OpenFileId id);
+// Use: To write "size" bytes from "buffer" to the open file. 
+// Return: the number of bytes actually write (read and write/ stdout), -1 on failure
+// ------------------------------------------------------------------------
+void Handle_Write() {
+	DEBUG(dbgSys, "---------- WRITING THE FILE ----------\n");
+	int addr = kernel->machine->ReadRegister(4);	// the address of the name's file
+	int size = kernel->machine->ReadRegister(5); 	// the size bytes of buffer
+	OpenFileId id = kernel->machine->ReadRegister(6);
+
+	// Possible errors
 	{
-		if ((kernel->fileSystem->openf[id]->Write(buf, size)) > 0)
-		{
-			// So byte thuc su = NewPos - OldPos
-			NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
-			kernel->machine->WriteRegister(2, NewPos - OldPos);
-			delete buf;
+		if(id < 0 || id > kernel->fileSystem->maxOpeningFile - 1){
+			DEBUG(dbgSys, "ID of the file is out of range.\n");
+			kernel->machine->WriteRegister(2, -1);
+			return;
+		}
+
+		if(kernel->fileSystem->openf[id] == NULL){
+			DEBUG(dbgSys, "The file hasn't opened yet.\n");
+			kernel->machine->WriteRegister(2, -1);
+			return;
+		}
+
+		if(kernel->fileSystem->openf[id]->type == typeFile::read){
+			DEBUG(dbgSys, "Can't write the read file.\n");
+			kernel->machine->WriteRegister(2, -1);
+			return;
+		}
+
+		if(kernel->fileSystem->openf[id]->type == typeFile::_stdin){
+			DEBUG(dbgSys, "Can't write the stdin file.\n");
+			kernel->machine->WriteRegister(2, -1);
 			return;
 		}
 	}
 
-	// Xet truong hop con lai ghi file stdout (type quy uoc la 3)
-	if (kernel->fileSystem->openf[id]->type == 3) 
-	{
+	int posBeforeWrite = kernel->fileSystem->openf[id]->GetCurrentPos();
+	char* buffer = UserToKernel(addr, size);
+	
+	// Write the stdout file
+	if (kernel->fileSystem->openf[id]->type == typeFile::_stdout){
 		int i = 0;
 		char input;
-		while (buf[i] != 0 && buf[i] != '\n') // Vong lap de write den khi gap ky tu '\n'
-		{
-			kernel->synchConsoleOut->PutChar(buf[i]);
+		while (buffer[i] != 0 && buffer[i] != '\n'){
+			kernel->synchConsoleOut->PutChar(buffer[i]);
 			i++;
 		}
-		buf[i] = '\n';
-		kernel->synchConsoleOut->PutChar(buf[i]); // Write ky tu '\n'
-		kernel->machine->WriteRegister(2, i - 1); // Tra ve so byte thuc su write duoc
-		delete buf;
+
+		DEBUG(dbgSys, "Write the file returning with " << i - 1 << ".\n");
+		kernel->machine->WriteRegister(2, i - 1);
+		delete[] buffer;
+		return;
 	}
+
+	// Write the read and write file
+	if ((kernel->fileSystem->openf[id]->Write(buffer, size)) > 0){
+		int posAfterWrite = kernel->fileSystem->openf[id]->GetCurrentPos();
+		int number_byte = posAfterWrite - posBeforeWrite;
+
+		DEBUG(dbgSys, "Write the file returning with " << number_byte << ".\n");
+		kernel->machine->WriteRegister(2, number_byte);
+	}
+	else{
+		DEBUG(dbgSys, "Can't write the file.\n");
+		kernel->machine->WriteRegister(2, -1);
+	}
+
+	delete[] buffer;
 }
 
+// ------------------------------------------------------------------------
+// int Seek(int position, OpenFileId id);
+// Use: To set the seek position of the open file "id" to the byte "position".
+// Return: position on success, -1 on failure
+// ------------------------------------------------------------------------
 void Handle_Seek() {
-	int pos = kernel->machine->ReadRegister(4); 
-	OpenFileId fileID = kernel->machine->ReadRegister(5); 
+	DEBUG(dbgSys, "---------- SEEKING THE FILE ----------\n");
+	int pos = kernel->machine->ReadRegister(4);			// The position user want to seek
+	OpenFileId id = kernel->machine->ReadRegister(5); 
 
-	if (fileID < 0 || fileID > 14) {
-		DEBUG(dbgSys, "ID is out of range.\n");
-		kernel->machine->WriteRegister(2, -1);
-		return;
+	// Possible errors
+	{
+		if(id < 0 || id > kernel->fileSystem->maxOpeningFile - 1){
+			DEBUG(dbgSys, "ID of the file is out of range.\n");
+			kernel->machine->WriteRegister(2, -1);
+			return;
+		}
+
+		if(kernel->fileSystem->openf[id] == NULL){
+			DEBUG(dbgSys, "The file hasn't opened yet.\n");
+			kernel->machine->WriteRegister(2, -1);
+			return;
+		}
+
+		if(id == ConsoleInput || id == ConsoleOutput){
+			DEBUG(dbgSys, "Can't call System-call Seek on the console.\n");
+			kernel->machine->WriteRegister(2, -1);
+			return;
+		}
 	}
-
-	if(kernel->fileSystem->openf[fileID] == NULL){
-		DEBUG(dbgSys, "The file doesn't exit.\n");
-		kernel->machine->WriteRegister(2, -1);
-		return;
-	}
-
-	// Seek tren console
-	if (fileID == 0 || fileID == 1)	{
-		DEBUG(dbgSys, "Can't call System-call Seek on the console.\n");
-		kernel->machine->WriteRegister(2, -1);
-		return;
-	}
-
-	int len = kernel->fileSystem->openf[fileID]->Length();
+		
+	int len = kernel->fileSystem->openf[id]->Length();
+	
+	// If pos = -1 go to the end of the file
 	if(pos == -1)
 		pos = len;
 
-	if (pos > len || pos < 0) {
+	if (pos < 0 || pos > len) {
 		DEBUG(dbgSys, "Can't seek the file to this position.\n");
 		kernel->machine->WriteRegister(2, -1);
 	}
 	else {
-		kernel->fileSystem->openf[fileID]->Seek(pos);
+		kernel->fileSystem->openf[id]->Seek(pos);
+		DEBUG(dbgSys, "Seek the file returning with " << pos << ".\n");
 		kernel->machine->WriteRegister(2, pos);
 	}
 }

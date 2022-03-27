@@ -84,21 +84,21 @@ FileSystem::FileSystem(bool format)
     if (format) {
         PersistentBitmap *freeMap = new PersistentBitmap(NumSectors);
         Directory *directory = new Directory(NumDirEntries);
-	FileHeader *mapHdr = new FileHeader;
-	FileHeader *dirHdr = new FileHeader;
+	    FileHeader *mapHdr = new FileHeader;
+	    FileHeader *dirHdr = new FileHeader;
 
         DEBUG(dbgFile, "Formatting the file system.");
 
     // First, allocate space for FileHeaders for the directory and bitmap
     // (make sure no one else grabs these!)
-	freeMap->Mark(FreeMapSector);	    
-	freeMap->Mark(DirectorySector);
+	    freeMap->Mark(FreeMapSector);	    
+	    freeMap->Mark(DirectorySector);
 
     // Second, allocate space for the data blocks containing the contents
     // of the directory and bitmap files.  There better be enough space!
 
-	ASSERT(mapHdr->Allocate(freeMap, FreeMapFileSize));
-	ASSERT(dirHdr->Allocate(freeMap, DirectoryFileSize));
+	    ASSERT(mapHdr->Allocate(freeMap, FreeMapFileSize));
+	    ASSERT(dirHdr->Allocate(freeMap, DirectoryFileSize));
 
     // Flush the bitmap and directory FileHeaders back to disk
     // We need to do this before we can "Open" the file, since open
@@ -106,8 +106,8 @@ FileSystem::FileSystem(bool format)
     // on it!).
 
         DEBUG(dbgFile, "Writing headers back to disk.");
-	mapHdr->WriteBack(FreeMapSector);    
-	dirHdr->WriteBack(DirectorySector);
+	    mapHdr->WriteBack(FreeMapSector);    
+	    dirHdr->WriteBack(DirectorySector);
 
     // OK to open the bitmap and directory files now
     // The file system operations assume these two files are left open
@@ -123,23 +123,53 @@ FileSystem::FileSystem(bool format)
     // to hold the file data for the directory and bitmap.
 
         DEBUG(dbgFile, "Writing bitmap and directory back to disk.");
-	freeMap->WriteBack(freeMapFile);	 // flush changes to disk
-	directory->WriteBack(directoryFile);
+	    freeMap->WriteBack(freeMapFile);	 // flush changes to disk
+	    directory->WriteBack(directoryFile);
 
-	if (debug->IsEnabled('f')) {
-	    freeMap->Print();
-	    directory->Print();
+	    if (debug->IsEnabled('f')) {
+	        freeMap->Print();
+	        directory->Print();
         }
         delete freeMap; 
-	delete directory; 
-	delete mapHdr; 
-	delete dirHdr;
-    } else {
+	    delete directory; 
+	    delete mapHdr; 
+	    delete dirHdr;
+    } 
+    else {
     // if we are not formatting the disk, just open the files representing
     // the bitmap and directory; these are left open while Nachos is running
         freeMapFile = new OpenFile(FreeMapSector);
         directoryFile = new OpenFile(DirectorySector);
     }
+
+    // Additional implement
+    openf = new OpenFile*[maxOpeningFile];
+
+    // Init table
+    for(int i = 0; i < maxOpeningFile; i++){
+        openf[i] = NULL;
+    }
+
+    // 2 field default in the table (index = 0 (stdin), index = 1 (stdout))
+    this->Create("stdin");
+    this->Create("stdout");
+    openf[0] = this->Open("stdin", 2);
+    openf[1] = this->Open("stdout", 3); 
+}
+
+//----------------------------------------------------------------------
+// FileSystem::~FileSystem
+// 	 Destructor -> remove the opening file table
+//----------------------------------------------------------------------
+
+FileSystem::~FileSystem()
+{
+    for (int i = 0; i < maxOpeningFile; i++)
+    {
+        if (openf[i] != NULL) 
+            delete openf[i];
+    }
+    delete[] openf;
 }
 
 //----------------------------------------------------------------------
@@ -234,9 +264,27 @@ FileSystem::Open(char *name)
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name); 
     if (sector >= 0) 		
-	openFile = new OpenFile(sector);	// name was found in directory 
+	    openFile = new OpenFile(sector);	// name was found in directory 
     delete directory;
-    return openFile;				// return NULL if not found
+    
+    return openFile;				        // return NULL if not found
+}
+
+OpenFile *
+FileSystem::Open(char *name, int type)
+{ 
+    Directory *directory = new Directory(NumDirEntries);
+    OpenFile *openFile = NULL;
+    int sector;
+
+    DEBUG(dbgFile, "Opening file" << name);
+    directory->FetchFrom(directoryFile);
+    sector = directory->Find(name); 
+    if (sector >= 0) 		
+	    openFile = new OpenFile(sector, type);	// name was found in directory 
+    delete directory;
+    
+    return openFile;				            // return NULL if not found
 }
 
 //----------------------------------------------------------------------
@@ -336,5 +384,18 @@ FileSystem::Print()
     delete freeMap;
     delete directory;
 } 
+
+//----------------------------------------------------------------------
+// FileSystem::FindFreeSlot
+// 	 Find the free slot in the opening file table 
+//----------------------------------------------------------------------
+int FindFreeSlot()
+{
+    for(int i = 2; i < maxOpeningFile; i++)
+    {
+        if(openf[i] == NULL) return i;		
+    }
+    return -1;
+}
 
 #endif // FILESYS_STUB

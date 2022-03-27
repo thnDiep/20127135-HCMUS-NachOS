@@ -37,49 +37,42 @@
 #include "sysdep.h"
 #include "openfile.h"
 
-typedef int OpenFileID;
+typedef int OpenFileId;
+
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 							// calls to UNIX, until the real file system
 							// implementation is available
 class FileSystem {
   public:
-	// Check is file opening
+	// The opening file table  -> (check the file whether is opening and keep type of the opening file)
 	OpenFile** openf;
-	int index;
+	const int maxOpeningFile = 10;
 
 	// Redefine
     FileSystem() {
-		openf = new OpenFile*[15];
-		index = 0;
+		openf = new OpenFile*[maxOpeningFile];
 
-		for(int i = 0;i < 15; i++){
+		// Init table
+		for(int i = 0; i < maxOpeningFile; i++){
 			openf[i] = NULL;
 		}
 
-		// this->Create("stdin");
-		// this->Create("stdout");
-		// openf[index++] = this->Open("stdin", 2);
-		// openf[index++] = this->Open("stdout", 3);  
+		// 2 field default in the table (index = 0 (stdin), index = 1 (stdout))
+		this->Create("stdin");
+		this->Create("stdout");
+		openf[0] = this->Open("stdin", 2);
+		openf[1] = this->Open("stdout", 3);  
 	}
 
-	// Destructor
+	// Destructor -> remove the opening file table  
 	~FileSystem()
 	{
-		for (int i = 0; i < 15; ++i)
+		for (int i = 0; i < maxOpeningFile; i++)
 		{
-			if (openf[i] != NULL) delete openf[i];
+			if (openf[i] != NULL) 
+				delete openf[i];
 		}
 		delete[] openf;
-	}
-
-	// Ham tim slot trong
-	int FindFreeSlot()
-	{
-		for(int i = 2; i < 15; i++)
-		{
-			if(openf[i] == NULL) return i;		
-		}
-		return -1;
 	}
 
     bool Create(char *name) {
@@ -97,39 +90,47 @@ class FileSystem {
 		return new OpenFile(fileDescriptor);
     }
 
-	// Overload lai ham Open de mo file voi 2 type khac nhau 
+	// Overload Constructor with the parameter type
 	OpenFile* Open(char *name, int type) {
 		int fileDescriptor = OpenForReadWrite(name, FALSE);
 
 		if (fileDescriptor == -1) return NULL;
-		//index++;
 		return new OpenFile(fileDescriptor, type);
 	}
 
-    bool Remove(char *name) { return Unlink(name) == 0; }
+    bool Remove(char *name) { 
+		return Unlink(name) == 0; 
+	}
 
+	// Find the free slot in the opening file table 
+	int FindFreeSlot()
+	{
+		for(int i = 2; i < maxOpeningFile; i++)
+		{
+			if(openf[i] == NULL) return i;		
+		}
+		return -1;
+	}
 };
 
 #else // FILESYS
 class FileSystem {
 public:
- 	 // Check is file opening
+ 	// The opening file table -> (check the file whether is opening and keep type of the opening file)
 	OpenFile** openf;
-	int index;
-	
-	int FindFreeSlot();
+	const int maxOpeningFile = 10;
 
-
-    FileSystem();					// Initialize the file system.
+    FileSystem(bool format);		// Initialize the file system.
 									// Must be called *after* "synchDisk" 
 									// has been initialized.
     								// If "format", there is nothing on
 									// the disk, so initialize the directory
     								// and the bitmap of free blocks.
+	~FileSystem();
 
-    bool Create(char *name);  	
+    bool Create(char *name, int initialSize);  		
 									// Create a file (UNIX creat)
-
+									
     OpenFile* Open(char *name); 	// Open a file (UNIX open)
 	OpenFile* Open(char *name, int type); 	
 									// Open a file with type parameter
@@ -140,11 +141,12 @@ public:
 
     void Print();					// List all the files and their contents
 
+	int FindFreeSlot();				// Find the free slot in the opening file table 
 private:
-   OpenFile* freeMapFile;		// Bit map of free disk blocks,
-								// represented as a file
-   OpenFile* directoryFile;		// "Root" directory -- list of 
-								// file names, represented as a file
+ 	OpenFile* freeMapFile;			// Bit map of free disk blocks,
+									// represented as a file
+   	OpenFile* directoryFile;		// "Root" directory -- list of 
+									// file names, represented as a file
 };
 
 #endif // FILESYS

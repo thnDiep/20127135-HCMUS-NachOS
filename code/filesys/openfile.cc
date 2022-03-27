@@ -31,6 +31,15 @@ OpenFile::OpenFile(int sector)
     hdr = new FileHeader;
     hdr->FetchFrom(sector);
     seekPosition = 0;
+    type = 0;
+}
+
+OpenFile::OpenFile(int sector, int t)
+{
+	hdr = new FileHeader;
+	hdr->FetchFrom(sector);
+	seekPosition = 0;
+	type = t;
 }
 
 //----------------------------------------------------------------------
@@ -191,6 +200,17 @@ int
 OpenFile::Length() 
 { 
     return hdr->FileLength(); 
+}
+
+//----------------------------------------------------------------------
+// OpenFile::GetCurrentPos
+// 	Return the current postition within the file.
+//----------------------------------------------------------------------
+
+int
+OpenFile::GetCurrentPos() 
+{ 
+    return seekPosition; 
 }
 
 #endif //FILESYS_STUB
