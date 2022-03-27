@@ -39,8 +39,8 @@
 
 typedef int OpenFileID;
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
-				// calls to UNIX, until the real file system
-				// implementation is available
+							// calls to UNIX, until the real file system
+							// implementation is available
 class FileSystem {
   public:
 	// Check is file opening
@@ -112,12 +112,15 @@ class FileSystem {
 
 #else // FILESYS
 class FileSystem {
-  public:
+public:
  	 // Check is file opening
 	OpenFile** openf;
 	int index;
+	
+	int FindFreeSlot();
 
-    FileSystem();		// Initialize the file system.
+
+    FileSystem();					// Initialize the file system.
 									// Must be called *after* "synchDisk" 
 									// has been initialized.
     								// If "format", there is nothing on
@@ -132,16 +135,16 @@ class FileSystem {
 									// Open a file with type parameter
 
     bool Remove(char *name);  		// Delete a file (UNIX unlink)
-	int FindFreeSlot();
-    void List();			// List all the files in the file system
 
-    void Print();			// List all the files and their contents
+    void List();					// List all the files in the file system
 
-  private:
+    void Print();					// List all the files and their contents
+
+private:
    OpenFile* freeMapFile;		// Bit map of free disk blocks,
-					// represented as a file
+								// represented as a file
    OpenFile* directoryFile;		// "Root" directory -- list of 
-					// file names, represented as a file
+								// file names, represented as a file
 };
 
 #endif // FILESYS

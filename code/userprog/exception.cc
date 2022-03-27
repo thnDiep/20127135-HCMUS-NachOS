@@ -52,6 +52,8 @@
 const int MAX_INT = 2147483647;
 const int MIN_INT = -2147483648;
 const int MAX_LENGTH_STRING = 255;
+const OpenFileID ConsoleInput = 0;
+const OpenFileID ConsoleOutput = 1;
 
 // Modify return point 
 void IncreasePC(){
@@ -305,7 +307,7 @@ void Handle_Create() {
 	}
 	
 	if (nameFile == NULL) {
-		DEBUG(dbgSys, "Can't read the file.\n");
+		DEBUG(dbgSys, "Can't create the file.\n");
 		kernel->machine->WriteRegister(2, -1);
 		delete nameFile;
 		return;
@@ -321,6 +323,15 @@ void Handle_Create() {
 	delete nameFile;
 }
 
+void Handle_Remove() {
+	// Chua xu ly truong hop file dang mo
+	int addr = kernel->machine->ReadRegister(4); 				// Lay dia chi cua ten file
+	char* nameFile = UserToKernel(addr, MAX_LENGTH_STRING);
+
+	kernel->fileSystem->Remove(nameFile);
+	delete nameFile;
+}
+
 void Handle_Open() {
 	int addr = kernel->machine->ReadRegister(4);	// read the address of name's file
 	int type = kernel->machine->ReadRegister(5);
@@ -332,17 +343,22 @@ void Handle_Open() {
 		if (type == 0 || type == 1){
 			if ((kernel->fileSystem->openf[free] = kernel->fileSystem->Open(nameFile, type)) != NULL) {
 				kernel->machine->WriteRegister(2, free);
+				DEBUG(dbgSys, "Opening the file returning with " << free << "\n");
 			}
 		}
 		else if (type == 2 ) {
-			kernel->machine->WriteRegister(2,0);
+			kernel->machine->WriteRegister(2, 0);
+			DEBUG(dbgSys, "Opening the file returning with  0\n");
 		}
 		else {
-			kernel->machine->WriteRegister(2,1);
+			kernel->machine->WriteRegister(2, 1);
+			DEBUG(dbgSys, "Opening the file returning with  1\n");
 		}
 	}
-	kernel->machine->WriteRegister(2,-1);
-
+	else{
+		kernel->machine->WriteRegister(2, -1);
+		DEBUG(dbgSys, "Opening the file returning with  -1\n");
+	}	
 	delete nameFile;
 }
 
@@ -361,43 +377,166 @@ void Handle_Close() {
 	kernel->machine->WriteRegister(2, -1);
 }
 
+void Handle_Read() {
+	int addr = kernel->machine->ReadRegister(4);
+	int size = kernel->machine->ReadRegister(5);
+	OpenFileID id = kernel->machine->ReadRegister(6);
 
-// void Handle_Read(char* buffer, int size, OpenFileId id) {
+	if(id < 0 || id > 14){
+		DEBUG(dbgSys, "Can't read the file\n");
+		kernel->machine->WriteRegister(2, -1);
+		return;
+	}
 
-// }
+	if(kernel->fileSystem->openf[id] == NULL){
+		DEBUG(dbgSys, "The file doesn't exit\n");
+		kernel->machine->WriteRegister(2, -1);
+		return;
+	}
 
-/*void Handle_Seek() {
-	char *tmp;
+	if(kernel->fileSystem->openf[id]->type == 3){
+		DEBUG(dbgSys, "Can't read the stdout file\n");
+		kernel->machine->WriteRegister(2, -1);
+		return;
+	}
+
+	int pos = kernel->fileSystem->openf[id]->GetCurrentPos();
+	char* buffer = UserToKernel(addr, size);
+	// Xet truong hop doc file stdin (type quy uoc la 2)
+	if (kernel->fileSystem->openf[id]->type == 2){
+		// Su dung ham Read cua lop SynchConsole de tra ve so byte thuc su doc duoc
+		int byte = 0;
+		char input;
+		while((input = kernel->synchConsoleIn->GetChar()) != '\n'){
+		buffer[byte] = input;
+		byte++;
+		if(byte >= size)
+			break;
+		}
+		KernelToUser(addr, byte, buffer); // Copy chuoi tu vung nho System Space sang User Space voi bo dem buffer co do dai la so byte thuc su
+		kernel->machine->WriteRegister(2, byte); // Tra ve so byte thuc su doc duoc
+		delete buffer;
+		return;
+	}
+
+	// Xet truong hop doc file binh thuong thi tra ve so byte thuc su
+	if ((kernel->fileSystem->openf[id]->Read(buffer, size)) > 0)
+	{
+		// So byte thuc su = NewPos - OldPos
+		int NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
+		// Copy chuoi tu vung nho System Space sang User Space voi bo dem buffer co do dai la so byte thuc su 
+		KernelToUser(addr, NewPos - pos, buffer); 
+		kernel->machine->WriteRegister(2, NewPos - pos);
+	}
+	else
+	{
+		// Truong hop con lai la doc file co noi dung la NULL tra ve -2
+		//printf("\nDoc file rong.");
+		kernel->machine->WriteRegister(2, -2);
+	}
+	delete buffer;
+}
+
+void Handle_Write() {
+	int addr = kernel->machine->ReadRegister(4); 				// Lay dia chi cua tham so buffer tu thanh ghi so 4
+	int size = kernel->machine->ReadRegister(5); 			// Lay charcount tu thanh ghi so 5
+	OpenFileID id = kernel->machine->ReadRegister(6); 							// Lay id cua file tu thanh ghi so 6
+
+	// Kiem tra id cua file truyen vao co nam ngoai bang mo ta file khong
+	if (id < 0 || id > 14)
+	{
+		printf("\nKhong the write vi id nam ngoai bang mo ta file.");
+		kernel->machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Kiem tra file co ton tai khong
+	if (kernel->fileSystem->openf[id] == NULL)
+	{
+		printf("\nKhong the write vi file nay khong ton tai.");
+		kernel->machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Xet truong hop ghi file only read (type quy uoc la 1) hoac file stdin (type quy uoc la 2) thi tra ve -1
+	if (kernel->fileSystem->openf[id]->type == 1 || kernel->fileSystem->openf[id]->type == 2)
+	{
+		printf("\nKhong the write file stdin hoac file only read.");
+		kernel->machine->WriteRegister(2, -1);
+		return;
+	}
+
+	int OldPos;
+	int NewPos;
+	char *buf;
+	OldPos = kernel->fileSystem->openf[id]->GetCurrentPos(); // Kiem tra thanh cong thi lay vi tri OldPos
+	buf = UserToKernel(addr, size); 						 // Copy chuoi tu vung nho User Space sang System Space voi bo dem buffer dai charcount
+	
+	// Xet truong hop ghi file read & write (type quy uoc la 0) thi tra ve so byte thuc su
+	if (kernel->fileSystem->openf[id]->type == 0)
+	{
+		if ((kernel->fileSystem->openf[id]->Write(buf, size)) > 0)
+		{
+			// So byte thuc su = NewPos - OldPos
+			NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
+			kernel->machine->WriteRegister(2, NewPos - OldPos);
+			delete buf;
+			return;
+		}
+	}
+
+	// Xet truong hop con lai ghi file stdout (type quy uoc la 3)
+	if (kernel->fileSystem->openf[id]->type == 3) 
+	{
+		int i = 0;
+		char input;
+		while (buf[i] != 0 && buf[i] != '\n') // Vong lap de write den khi gap ky tu '\n'
+		{
+			kernel->synchConsoleOut->PutChar(buf[i]);
+			i++;
+		}
+		buf[i] = '\n';
+		kernel->synchConsoleOut->PutChar(buf[i]); // Write ky tu '\n'
+		kernel->machine->WriteRegister(2, i - 1); // Tra ve so byte thuc su write duoc
+		delete buf;
+	}
+}
+
+void Handle_Seek() {
 	int pos = kernel->machine->ReadRegister(4); 
 	OpenFileId fileID = kernel->machine->ReadRegister(5); 
 
-	*tmp = (char) fileID;
-	if (fileID < 0 || fileID > 14 || kernel->fileSystem->Open(tmp) == NULL) {
-		DEBUG(dbgSys, "\nID is out of search range or ID is doesn't exist.");
+	if (fileID < 0 || fileID > 14) {
+		DEBUG(dbgSys, "ID is out of range.\n");
 		kernel->machine->WriteRegister(2, -1);
 		return;
-	}*/
-	// //Seek tren console
-	// if (fileID == 0 || fileID == 1)	{
-	// 	DEBUG(dbgSys, "\nError!!Can't call Seek on the console.");
-	// 	kernel->machine->WriteRegister(2, -1);
-	// 	return;
-	// }
-	// int Len = kernel->fileSystem->Open(tmp)->Length();
-	// pos = (pos == -1) ? Len : pos; 
+	}
 
-	// if (pos > Len || pos < 0) {
-	// 	kernel->machine->WriteRegister(2, -1);
-	// }
-	// else {
-	// 	OpenFile* temp = kernel->fileSystem->Open(tmp);
-	// 	temp->Seek(pos);
-	// 	kernel->machine->WriteRegister(2, pos);
-	// }
-//}
+	if(kernel->fileSystem->openf[fileID] == NULL){
+		DEBUG(dbgSys, "The file doesn't exit.\n");
+		kernel->machine->WriteRegister(2, -1);
+		return;
+	}
 
-void Handle_Remove() {
+	// Seek tren console
+	if (fileID == 0 || fileID == 1)	{
+		DEBUG(dbgSys, "Can't call System-call Seek on the console.\n");
+		kernel->machine->WriteRegister(2, -1);
+		return;
+	}
 
+	int len = kernel->fileSystem->openf[fileID]->Length();
+	if(pos == -1)
+		pos = len;
+
+	if (pos > len || pos < 0) {
+		DEBUG(dbgSys, "Can't seek the file to this position.\n");
+		kernel->machine->WriteRegister(2, -1);
+	}
+	else {
+		kernel->fileSystem->openf[fileID]->Seek(pos);
+		kernel->machine->WriteRegister(2, pos);
+	}
 }
 
 void ExceptionHandler(ExceptionType which){
@@ -527,6 +666,14 @@ void ExceptionHandler(ExceptionType which){
 					ASSERTNOTREACHED();
 					break;
 
+				case SC_Remove:
+					Handle_Remove();
+					IncreasePC();
+					return;
+
+					ASSERTNOTREACHED();
+					break;
+
 				case SC_Open:
 					Handle_Open();
 					IncreasePC();
@@ -543,10 +690,29 @@ void ExceptionHandler(ExceptionType which){
 					ASSERTNOTREACHED();
 					break;
 
-				// case SC_Seek:
-				// 	Handle_Seek();
-				// 	ASSERTNOTREACHED();
-				// 	break;
+				case SC_Read:
+					Handle_Read();
+					IncreasePC();
+					return;
+
+					ASSERTNOTREACHED();
+					break;
+
+				case SC_Write:
+					Handle_Write();
+					IncreasePC();
+					return;
+
+					ASSERTNOTREACHED();
+					break;
+
+				case SC_Seek:
+					Handle_Seek();
+					IncreasePC();
+					return;
+
+					ASSERTNOTREACHED();
+					break;
 
      			default:
 					cerr << "Unexpected system call " << type << "\n";

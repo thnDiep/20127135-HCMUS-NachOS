@@ -8,8 +8,9 @@
 #include "syscall.h"
 
 int main() {
-    // char name[255];
-
+    char name[255];
+    int id;
+    char buffer [255];
     // PrintString("Input the file's name: \n");
     // ReadString(name, 255);
 
@@ -18,8 +19,15 @@ int main() {
     // else
     //     PrintString("Creating the new file fails!\n");
 
-    int id = Open("file1", 1);
-    Close(id);
+    // id = Open("file1", 0);
+    // Read(buffer, 10, id);
+    // PrintString(buffer);
+    
+    // Seek(5, id);
+    // Write(" all the ", 9, id);
+    // Close(id);
+    Remove("file1");
     Halt();
+
     /*  Not reached  */
 }

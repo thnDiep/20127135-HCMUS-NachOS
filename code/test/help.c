@@ -3,7 +3,7 @@
 int main(){
     PrintString("\t\t -----GROUP-----\n");
 	PrintString("20127135 - Tran Huynh Ngoc Diep\n");
-	PrintString("20127252 - Ngo Gia Ngan\n\n");
+	PrintString("20127252 - Ngo Gia Ngan\n");
 	PrintString("20127305 - Tran Thao Quyen\n");
 	
 	PrintString("\t\t -----ASCII-----\n");

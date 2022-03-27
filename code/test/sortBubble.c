@@ -1,7 +1,5 @@
 #include "syscall.h"
-
-int main() {
-    // int tmp, n, m;
+ // int tmp, n, m;
     // int array[100];
 
     // PrintString("Enter number of elements: ");
@@ -62,4 +60,7 @@ int main() {
     //     PrintChar('\t');
     // }
     // return 0;
+int main() {
+   
+    Halt();
 }

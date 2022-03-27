@@ -112,7 +112,7 @@ ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = add halt shell matmult sort segments ioNum ioChar randomNum ioString createfile
+PROGRAMS = add halt shell matmult sort segments ioNum ioChar randomNum ioString createfile sortBubble help ascii
 endif
 
 all: $(PROGRAMS)
@@ -178,19 +178,19 @@ help.o: help.c
 	$(CC) $(CFLAGS) -c help.c
 help: help.o start.o
 	$(LD) $(LDFLAGS) start.o help.o -o help.coff
-	../bin/coff2noff help.coff help
-
+	$(COFF2NOFF) help.coff help
+	
 ascii.o: ascii.c
 	$(CC) $(CFLAGS) -c ascii.c
 ascii: ascii.o start.o
 	$(LD) $(LDFLAGS) start.o ascii.o -o ascii.coff
-	../bin/coff2noff ascii.coff ascii
+	$(COFF2NOFF) ascii.coff ascii
 
-SortBubble.o: SortBubble.c
-	$(CC) $(CFLAGS) -c SortBubble.c
-SortBubble: SortBubble.o start.o
-	$(LD) $(LDFLAGS) start.o SortBubble.o -o SortBubble.coff
-	../bin/coff2noff SortBubble.coff SortBubble.
+sortBubble.o: sortBubble.c
+	$(CC) $(CFLAGS) -c sortBubble.c
+sortBubble: sortBubble.o start.o
+	$(LD) $(LDFLAGS) start.o sortBubble.o -o sortBubble.coff
+	$(COFF2NOFF) sortBubble.coff sortBubble
 
 shell.o: shell.c
 	$(CC) $(CFLAGS) -c shell.c
