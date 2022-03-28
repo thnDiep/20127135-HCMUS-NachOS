@@ -20,7 +20,6 @@ int main() {
     }
     else 
         PrintString ("Error!!");
-
-    Halt();
-    /* Not reached */
+    
+    return 0;
 }
