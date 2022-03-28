@@ -19,7 +19,8 @@ int main() {
         Close (k);
     }
     else 
-        PrintString ("Error!!";)
+        PrintString ("Error!!");
 
-    return 0;
+    Halt();
+    /* Not reached */
 }
