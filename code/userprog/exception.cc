@@ -119,7 +119,7 @@ int KernelToUser(int virtAddr, int len, char* buffer)
 	int character = 0;
 	do{ 
 		character = (int)buffer[i]; 
-		machine->WriteMem(virtAddr + i, 1, character); 
+		kernel->machine->WriteMem(virtAddr + i, 1, character); 
 		i++; 
  	} while(i < len && character != 0);
 
