@@ -167,11 +167,13 @@ void Handle_ReadNum(){
 		}
 
 		length++;
+
 		// Check input
 		if(input >= '0' && input <= '9')
 			result = result * 10 + (input - '0');
 		else
 			isError = true;
+
 	}
 
 	if(isNegative)

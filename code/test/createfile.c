@@ -8,26 +8,30 @@
 #include "syscall.h"
 
 int main() {
-    // char name[255];
-    int id;
-    char buffer [255];
-    // PrintString("Input the file's name: \n");
-    // ReadString(name, 255);
+    int n = Create ("TestFile.txt");
+    if (n == 0) 
+        PrintString("Create file success!");
+    else if (n == -1)
+        PrintString("Create file fail!");
+    else 
+        PrintString("Error!");
+    //Halt();
 
-    // if(Create(name) == 0)
-    //     PrintString("Creating the new file successes!\n");
-    // else
-    //     PrintString("Creating the new file fails!\n");
+    /* Nhap ten file tu ng dung
+    char name[100];
+    PrintString("Input name's length: ");
+    int n = ReadNum();
+    PrintString("\nInput name: ");
+    ReadString(name, n); 
+    int m = Create(name);
+     if (m == 0) 
+        PrintString("Create file success!");
+    else if (m == -1)
+        PrintString("Create file fail!");
+    else 
+        PrintString("Error!");*/
 
-    id = Open("file1", 1);
-    if(Read(buffer, 10, id) >= 0)
-        PrintString(buffer);
-    
-    Seek(5, id);
-    Write(" all the ", 9, id);
-    Close(id);
-    // Remove("file1");
-    Halt();
-
-    /*  Not reached  */
+    return 0;
 }
+
+
