@@ -1,3 +1,10 @@
+/* add.c
+ *	Simple program to test whether the systemcall interface works.
+ *	
+ *	Just do PrintString, PrintString, Create, Seek, Close syscall that copies the content of the source file for destination file.
+ *
+ */
+
 #include "syscall.h" 
 
 int main () {
@@ -44,4 +51,5 @@ int main () {
 	
 	// return 0;
 	Halt();
+	/*  Not reached  */
 }

@@ -1,7 +1,7 @@
 /* create.c
  *	Simple program to test whether the systemcall interface works.
  *	
- *	Just do a Create syscall that create the new file and return 0 if success, -1 if fail
+ *	Just do a Create syscall that creates the new file and return 0 if success, -1 if fail
  *
  */
 
@@ -31,7 +31,8 @@ int main() {
     else 
         PrintString("Error!");*/
 
-    return 0;
+    Halt();
+    /*  Not reached  */
 }
 
 

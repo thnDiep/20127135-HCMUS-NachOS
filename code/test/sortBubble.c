@@ -1,3 +1,9 @@
+/* sortBubble.c
+ *	Simple program to test whether the systemcall interface works.
+ *	
+ *	Using bubble sort to sort a array ascending or descending and display the result
+ *
+ */
 #include "syscall.h"
  
 int main() {

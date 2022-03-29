@@ -1,3 +1,12 @@
+/* cat.c
+ *	Simple program to test whether the systemcall interface works.
+ *	
+ *	Just do ReadString, PrintString, Open and Seek syscall that display the content of the file.
+ *
+ */
+
+
+
 #include "syscall.h" 
 
 int main() {
@@ -23,4 +32,5 @@ int main() {
     
     // return 0;
     Halt();
+    /*  Not reached  */
 }
