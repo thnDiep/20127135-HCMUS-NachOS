@@ -65,22 +65,22 @@ int Add(int op1, int op2);
 // Read the integer number input by user and return it or 0 (if not a integer)
 int ReadNum();
 
-// Print the integer number to console
+// Print the integer number to the console
 void PrintNum(int number);
 
 // Read the character input by user and return it
 char ReadChar();
 
-// Print the character to console
+// Print a character to the console
 void PrintChar(char character);
 
 // Random and return the positive integer number
 int RandomNum();
 
-// Read the string input by user
-char* ReadString(char buffer[], int length);
+// Read a string input by user
+void ReadString(char buffer[], int length);
 
-// Print the string to console
+// Print a string to console
 void PrintString(char buffer[]);
 
 /* Address space control operations: Exit, Exec, Execv, and Join */
@@ -143,7 +143,7 @@ int Remove(char *name);
 /* Open the Nachos file "name", and return an "OpenFileId" that can 
  * be used to read and write to the file.
  */
-OpenFileId Open(char *name, int type);
+OpenFileId Open(char *name);
 
 /* Write "size" bytes from "buffer" to the open file. 
  * Return the number of bytes actually read on success.

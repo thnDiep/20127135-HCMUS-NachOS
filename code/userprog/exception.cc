@@ -52,15 +52,11 @@
 const int MAX_INT = 2147483647;
 const int MIN_INT = -2147483648;
 const int MAX_LENGTH_STRING = 255;
-const OpenFileId ConsoleInput = 0;
-const OpenFileId ConsoleOutput = 1;
+const int MAX_FILE_LENGTH = 32;
 
-enum typeFile{
-	read,
-	readAndWrite,
-	_stdin,
-	_stdout
-};
+
+#define ConsoleInput	0
+#define ConsoleOutput	1
 
 // Modify return point 
 void IncreasePC(){
@@ -74,7 +70,12 @@ void IncreasePC(){
 	  kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
 }
 
-// Moving data from user space to kernel space
+/* 
+Input: - User space address (int) 
+ - Limit of buffer (int) 
+Output:- Buffer (char*) 
+Purpose: Copy buffer from User memory space to System memory space 
+*/ 
 char* UserToKernel(int virtAddr, int limit)
 { 
 	// Create kernel space to receive data from user space
@@ -98,7 +99,13 @@ char* UserToKernel(int virtAddr, int limit)
  	return kernelBuf; 
 } 
 
-// Moving data from kernel space to user space
+/* 
+Input: - User space address (int) 
+ - Limit of buffer (int) 
+ - Buffer (char[]) 
+Output:- Number of bytes copied (int) 
+Purpose: Copy buffer from System memory space to User memory space 
+*/ 
 int KernelToUser(int virtAddr, int len, char* buffer)
 {
 	// If data of kernel space invalid or empty
@@ -110,16 +117,19 @@ int KernelToUser(int virtAddr, int len, char* buffer)
 	// Move data
 	int i = 0;
 	int character = 0;
-	// Trong chuỗi có quyền có ký tự 0 nên không dùng character == 0 thì ngắt được
-	while(i < len){
-		character = (int)buffer[i];
-		kernel->machine->WriteMem(virtAddr + i, 1, character);
-		i++;
-	}
+	do{ 
+		character = (int)buffer[i]; 
+		machine->WriteMem(virtAddr + i, 1, character); 
+		i++; 
+ 	} while(i < len && character != 0);
 
 	return i;
 }
 
+// ------------------------------------------------------------------------
+// int Add(int op1, int op2);
+// Use: Add the two operants and return the result
+// ------------------------------------------------------------------------
 void Handle_Add(){
 	DEBUG(dbgSys, "Add " << kernel->machine->ReadRegister(4) << " + " << kernel->machine->ReadRegister(5) << "\n");
 	
@@ -133,12 +143,16 @@ void Handle_Add(){
 	kernel->machine->WriteRegister(2, (int)result);
 }
 
+// ------------------------------------------------------------------------
+// int ReadNum();
+// Use: Read the integer number input by user and return it or 0 (if not a integer)
+// ------------------------------------------------------------------------
 void Handle_ReadNum(){
-	DEBUG(dbgSys, "Read the integer number.\n");
+	DEBUG(dbgSys, "---------- READING THE NUMBER CHARACTER FROM THE CONSOLE ----------\n");
 
 	char input;					// Get input from console
 	int64_t result = 0;
-	int length = 0;				// Length of number
+	int length = 0;				// Length of the number to check limit of number
 	bool isError = false;
 	bool isFirstChar = true;
 	bool isNegative = false;
@@ -175,32 +189,36 @@ void Handle_ReadNum(){
 		result = 0;
 	}
 
-	DEBUG(dbgSys, "Read the number returning with " << result << "\n");
+	DEBUG(dbgSys, "Read the number returning with " << result << ".\n");
 	
-	/* Prepare Result */
 	kernel->machine->WriteRegister(2, (int)result);
 }
 
+// ------------------------------------------------------------------------
+// void PrintNum(int number);
+// Use: Print the integer number to the console
+// ------------------------------------------------------------------------
 void Handle_PrintNum(){
-	int number = kernel->machine->ReadRegister(4);
-	DEBUG(dbgSys, "Print the number " << number << " to console.\n");
+	DEBUG(dbgSys, "---------- PRINTING THE NUMBER CHARACTER TO THE CONSOLE ----------\n");
 
+	int number = kernel->machine->ReadRegister(4);
+
+	// Case number is 0
 	if(number == 0){
 		kernel->synchConsoleOut->PutChar('0');
-		kernel->synchConsoleOut->PutChar('\n');
 		return;
 	}
 
-	bool isNegative = false;
-	int length = 0;
+	bool isNegative = false;	// check the sign of the number
+	int length = 0;				// length of the number
 
-	if(number < 0){
+	if(number < 0){				// negative number
 		isNegative = true;
 		number *= -1;
 		length = 1;
 	}
 
-	int temp_number = number;
+	int temp_number = number;	// compute length of the number
 	while(temp_number){
 		temp_number /= 10;
 		length++;
@@ -222,48 +240,62 @@ void Handle_PrintNum(){
 	for(int i = 0; i < length; i++){
 		kernel->synchConsoleOut->PutChar(result[i]);
 	}
-	kernel->synchConsoleOut->PutChar('\n');
-	delete result;
+	delete[] result;
 }
 
+// ------------------------------------------------------------------------
+// char ReadChar();
+// Use: Read the character input by user and return it
+// ------------------------------------------------------------------------
 void Handle_ReadChar(){
-	DEBUG(dbgSys, "Read the character.\n");
+	DEBUG(dbgSys, "---------- READING A CHARACTER TO THE CONSOLE ----------\n");
 
 	char result = kernel->synchConsoleIn->GetChar();
 	
 	if(result == '\n')
 		DEBUG(dbgSys, "Character is empty.\n")
 	else
-		DEBUG(dbgSys, "Read the charactor returning with " << result << "\n");
+		DEBUG(dbgSys, "Read the charactor returning with " << result << ".\n");
 	
-	/* Prepare Result */
 	kernel->machine->WriteRegister(2, result);
 }
 
+// ------------------------------------------------------------------------
+// void PrintChar(char character);
+// Use: Print a character to the console
+// ------------------------------------------------------------------------
 void Handle_PrintChar(){
+	DEBUG(dbgSys, "---------- PRINTING A CHARACTER TO THE CONSOLE ----------\n");
+
 	char result = kernel->machine->ReadRegister(4);
-	DEBUG(dbgSys, "Print the character " << result << " to console.\n");
+
 	kernel->synchConsoleOut->PutChar(result);
-	kernel->synchConsoleOut->PutChar('\n');
 }
 
+// ------------------------------------------------------------------------
+// int RandomNum();
+// Use: Random and return the positive integer number
+// ------------------------------------------------------------------------
 void Handle_RandomNum(){
-	DEBUG(dbgSys, "Random a positive integer number.\n");
+	DEBUG(dbgSys, "---------- RANDOM A POSITIVE INTEGER NUMBER ----------\n");
 
 	srand(time(0));
 	unsigned int result = rand();
 
-	DEBUG(dbgSys, "Random returning with " << result << "\n");
-	/* Prepare Result */
+	DEBUG(dbgSys, "Random returning with " << result << ".\n");
 	kernel->machine->WriteRegister(2, result);
 }
 
-// Mới chỉnh sửa read/print được bình thường chưa xét các trường hợp ngoại lệ 
+// ------------------------------------------------------------------------
+// void ReadString(char buffer[], int length);
+// Use: Read a string input by user from the console
+// ------------------------------------------------------------------------
 void Handle_ReadString() {
-	DEBUG(dbgSys, "Read the string.\n");
+	DEBUG(dbgSys, "---------- READING A STRING FROM THE CONSOLE ----------\n");
 
 	int addr = kernel->machine->ReadRegister(4);	// address of string from register4
 	int length = kernel->machine->ReadRegister(5);	// length of string from register5
+	
 	char* buffer = new char[length + 1];
 
 	char input;
@@ -274,26 +306,28 @@ void Handle_ReadString() {
 		if(pos >= length)
 			break;
 	}
+	buffer[pos] = '\0';
 
 	KernelToUser(addr, length, buffer);
 	delete[] buffer;
 }
 
+// ------------------------------------------------------------------------
+// void PrintString(char buffer[]);
+// Use: Print a string to the console
+// ------------------------------------------------------------------------
 void Handle_PrintString() {
-	DEBUG(dbgSys, "Print the string.\n");
+	DEBUG(dbgSys, "---------- PRINTING A STRING TO THE CONSOLE ----------\n");
 
 	int addr = kernel->machine->ReadRegister(4);
 
 	char* buffer = UserToKernel(addr, MAX_LENGTH_STRING);
 
-	// Count the length of the string
-	int length = 0;
-	while (buffer[length] != '\0')
-		length++;
-
-	// Print the string
-	for(int i = 0; i < length; i++)
+	int i = 0;
+	while (buffer[i] != 0 && buffer[i] != '\0'){
 		kernel->synchConsoleOut->PutChar(buffer[i]);
+		i++;
+	}
 
 	delete[] buffer;
 }
@@ -304,11 +338,11 @@ void Handle_PrintString() {
 // Return: 0 on success, -1 on failure
 // ------------------------------------------------------------------------
 void Handle_Create() {
-	DEBUG(dbgSys, "Create a new file.\n");
+	DEBUG(dbgSys, "---------- CREATING THE FILE ----------\n");
 
 	int addr = kernel->machine->ReadRegister(4);  	// the address of name's file
 	
-	char* nameFile = UserToKernel(addr, MAX_LENGTH_STRING);
+	char* nameFile = UserToKernel(addr, MAX_FILE_LENGTH);
 
 	// Check the name of files
 	{
@@ -320,7 +354,7 @@ void Handle_Create() {
 		}
 	
 		if (nameFile == NULL){
-			DEBUG(dbgSys, "Can't create the file.\n");
+			DEBUG(dbgSys, "Not enough memory in system.\n");
 			kernel->machine->WriteRegister(2, -1);
 			delete[] nameFile;
 			return;
@@ -333,66 +367,57 @@ void Handle_Create() {
 		kernel->machine->WriteRegister(2, -1);
 	}
 	else{
-		DEBUG(dbgSys, "Create the file is success.\n");
+		DEBUG(dbgSys, "Successfully create.\n");
 		kernel->machine->WriteRegister(2, 0);
+	}
+	delete[] nameFile;	
+}
+
+// ------------------------------------------------------------------------
+// int Remove(char *name);
+// Use: To remove a Nachos file, with name "name"
+// Return: 1 on success, -1 on failure
+// ------------------------------------------------------------------------
+void Handle_Remove() {
+	DEBUG(dbgSys, "---------- REMOVING THE FILE ----------\n");
+	int addr = kernel->machine->ReadRegister(4);	// the address of the name's file
+	
+	char* nameFile = UserToKernel(addr, MAX_FILE_LENGTH);
+	if(kernel->fileSystem->Remove(nameFile)){
+		DEBUG(dbgSys, "Successfully remove.\n");
+		kernel->machine->WriteRegister(2, 1);
+	}
+	else{
+		DEBUG(dbgSys, "The file doesn't exit.\n");
+		kernel->machine->WriteRegister(2, -1);
 	}
 	delete[] nameFile;
 }
 
-//////////////////////////////////////////////////////////// HAVEN'T COMPLETE
-void Handle_Remove() {
-	// Chua xu ly truong hop file dang mo
-	int addr = kernel->machine->ReadRegister(4);	// the address of the name's file
-	char* nameFile = UserToKernel(addr, MAX_LENGTH_STRING);
-	kernel->fileSystem->Remove(nameFile);
-	delete[] nameFile;
-}
-
 // ------------------------------------------------------------------------
-// OpenFileId Open(char *name, int type);
+// OpenFileId Open(char *name);
 // Use: To open a file with the user selected type of the file
 // Return: OpenFileId on success, -1 on failure
 // ------------------------------------------------------------------------
 void Handle_Open() {
 	DEBUG(dbgSys, "---------- OPENING THE FILE ----------\n");
 	int addr = kernel->machine->ReadRegister(4);	// the address of the name's file
-	int type = kernel->machine->ReadRegister(5);	// the type of the file
     
-	char* nameFile = UserToKernel(addr, MAX_LENGTH_STRING);
+	char* nameFile = UserToKernel(addr, MAX_FILE_LENGTH);
 
 	int freeSlot = kernel->fileSystem->FindFreeSlot();
 
-	if (freeSlot != -1){  							// The opening file table has free slot
-		switch (type)
-		{
-		case typeFile::read:
-		case typeFile::readAndWrite:
-			kernel->fileSystem->openf[freeSlot] = kernel->fileSystem->Open(nameFile, type);
-													// Only open the file in this case
-			if (kernel->fileSystem->openf[freeSlot]) {
-				DEBUG(dbgSys, "Open a file returning with " << freeSlot << ".\n");
-				kernel->machine->WriteRegister(2, freeSlot);
-			}
-			else {
-				DEBUG(dbgSys, "The file doesn't exit.\n");
-				kernel->machine->WriteRegister(2, -1);
-			}	
-			break;
+	if (freeSlot != -1){  							// The opening file table has a free slot
+		kernel->fileSystem->openingFile[freeSlot] = kernel->fileSystem->Open(nameFile);
 
-		case typeFile::_stdin:
-			DEBUG(dbgSys, "Open a file returning with " << ConsoleInput << ".\n");
-			kernel->machine->WriteRegister(2, ConsoleInput);
-			break;
-			
-		case typeFile::_stdout:
-			DEBUG(dbgSys, "Open a file returning with " << ConsoleOutput << ".\n");
-			kernel->machine->WriteRegister(2, ConsoleOutput);
-			break;
-
-		default:
-			DEBUG(dbgSys, "Type of the file is invalid.\n");
-			break;
+		if (kernel->fileSystem->openingFile[freeSlot]) {
+			DEBUG(dbgSys, "Open a file returning with " << freeSlot << ".\n");
+			kernel->machine->WriteRegister(2, freeSlot);
 		}
+		else {
+			DEBUG(dbgSys, "The file doesn't exit.\n");
+			kernel->machine->WriteRegister(2, -1);
+		}	
 	}
 	else{											// The opening file table is full
 		DEBUG(dbgSys, "Can't open the file.\n");
@@ -416,11 +441,11 @@ void Handle_Close() {
 		kernel->machine->WriteRegister(2, -1);
 	}
 	else{
-		if (kernel->fileSystem->openf[id]){		// If file is opening
-			delete kernel->fileSystem->openf[id];
-			kernel->fileSystem->openf[id] = NULL;
+		if (kernel->fileSystem->openingFile[id]){		// If the file is opening
+			delete kernel->fileSystem->openingFile[id];
+			kernel->fileSystem->openingFile[id] = NULL;
 
-			DEBUG(dbgSys, "Close the file is success.\n");
+			DEBUG(dbgSys, "Successfully close.\n");
 			kernel->machine->WriteRegister(2, 1);
 		}
 	}
@@ -445,13 +470,13 @@ void Handle_Read() {
 			return;
 		}
 
-		if(kernel->fileSystem->openf[id] == NULL){
+		if(kernel->fileSystem->openingFile[id] == NULL){
 			DEBUG(dbgSys, "The file hasn't opened yet.\n");
 			kernel->machine->WriteRegister(2, -1);
 			return;
 		}
 
-		if(kernel->fileSystem->openf[id]->type == typeFile::_stdout){
+		if(id == ConsoleOutput){
 			DEBUG(dbgSys, "Can't read the stdout file.\n");
 			kernel->machine->WriteRegister(2, -1);
 			return;
@@ -459,11 +484,11 @@ void Handle_Read() {
 	}
 	
 
-	int posBeforeRead = kernel->fileSystem->openf[id]->GetCurrentPos();
+	int posBeforeRead = kernel->fileSystem->openingFile[id]->GetCurrentPos();
 	char* buffer = new char[size];
 
 	// Read the stdin file
-	if (kernel->fileSystem->openf[id]->type == typeFile::_stdin){
+	if (id == ConsoleInput){
 		// Read from console
 		int number_byte = 0;
 		char input;
@@ -484,8 +509,8 @@ void Handle_Read() {
 	}
 
 	// Read the read/ read and write file
-	if ((kernel->fileSystem->openf[id]->Read(buffer, size)) > 0){
-		int posAfterRead = kernel->fileSystem->openf[id]->GetCurrentPos();
+	if ((kernel->fileSystem->openingFile[id]->Read(buffer, size)) > 0){
+		int posAfterRead = kernel->fileSystem->openingFile[id]->GetCurrentPos();
 		int number_byte = posAfterRead - posBeforeRead;
 
 		KernelToUser(addr, number_byte, buffer); 
@@ -520,30 +545,24 @@ void Handle_Write() {
 			return;
 		}
 
-		if(kernel->fileSystem->openf[id] == NULL){
+		if(kernel->fileSystem->openingFile[id] == NULL){
 			DEBUG(dbgSys, "The file hasn't opened yet.\n");
 			kernel->machine->WriteRegister(2, -1);
 			return;
 		}
 
-		if(kernel->fileSystem->openf[id]->type == typeFile::read){
-			DEBUG(dbgSys, "Can't write the read file.\n");
-			kernel->machine->WriteRegister(2, -1);
-			return;
-		}
-
-		if(kernel->fileSystem->openf[id]->type == typeFile::_stdin){
+		if(id == ConsoleInput){
 			DEBUG(dbgSys, "Can't write the stdin file.\n");
 			kernel->machine->WriteRegister(2, -1);
 			return;
 		}
 	}
 
-	int posBeforeWrite = kernel->fileSystem->openf[id]->GetCurrentPos();
+	int posBeforeWrite = kernel->fileSystem->openingFile[id]->GetCurrentPos();
 	char* buffer = UserToKernel(addr, size);
 	
 	// Write the stdout file
-	if (kernel->fileSystem->openf[id]->type == typeFile::_stdout){
+	if (id == ConsoleOutput){
 		int i = 0;
 		char input;
 		while (buffer[i] != 0 && buffer[i] != '\n'){
@@ -558,8 +577,8 @@ void Handle_Write() {
 	}
 
 	// Write the read and write file
-	if ((kernel->fileSystem->openf[id]->Write(buffer, size)) > 0){
-		int posAfterWrite = kernel->fileSystem->openf[id]->GetCurrentPos();
+	if ((kernel->fileSystem->openingFile[id]->Write(buffer, size)) > 0){
+		int posAfterWrite = kernel->fileSystem->openingFile[id]->GetCurrentPos();
 		int number_byte = posAfterWrite - posBeforeWrite;
 
 		DEBUG(dbgSys, "Write the file returning with " << number_byte << ".\n");
@@ -591,7 +610,7 @@ void Handle_Seek() {
 			return;
 		}
 
-		if(kernel->fileSystem->openf[id] == NULL){
+		if(kernel->fileSystem->openingFile[id] == NULL){
 			DEBUG(dbgSys, "The file hasn't opened yet.\n");
 			kernel->machine->WriteRegister(2, -1);
 			return;
@@ -604,7 +623,7 @@ void Handle_Seek() {
 		}
 	}
 		
-	int len = kernel->fileSystem->openf[id]->Length();
+	int len = kernel->fileSystem->openingFile[id]->Length();
 	
 	// If pos = -1 go to the end of the file
 	if(pos == -1)
@@ -615,7 +634,7 @@ void Handle_Seek() {
 		kernel->machine->WriteRegister(2, -1);
 	}
 	else {
-		kernel->fileSystem->openf[id]->Seek(pos);
+		kernel->fileSystem->openingFile[id]->Seek(pos);
 		DEBUG(dbgSys, "Seek the file returning with " << pos << ".\n");
 		kernel->machine->WriteRegister(2, pos);
 	}

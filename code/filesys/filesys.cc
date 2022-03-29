@@ -143,19 +143,18 @@ FileSystem::FileSystem(bool format)
     }
 
     // Additional implement
-    openf = new OpenFile*[maxOpeningFile];
+    openingFile = new OpenFile*[maxOpeningFile];
 
     // Init table
     for(int i = 0; i < maxOpeningFile; i++){
-        openf[i] = NULL;
+        openingFile[i] = NULL;
     }
 
     // 2 field default in the table (index = 0 (stdin), index = 1 (stdout))
     this->Create("stdin");
     this->Create("stdout");
-    openf[0] = this->Open("stdin", 2);
-    openf[1] = this->Open("stdout", 3); 
-}
+    openingFile[0] = this->Open("stdin");
+    openingFile[1] = this->Open("stdout");  
 
 //----------------------------------------------------------------------
 // FileSystem::~FileSystem
@@ -166,10 +165,10 @@ FileSystem::~FileSystem()
 {
     for (int i = 0; i < maxOpeningFile; i++)
     {
-        if (openf[i] != NULL) 
-            delete openf[i];
+        if (openingFile[i] != NULL) 
+            delete openingFile[i];
     }
-    delete[] openf;
+    delete[] openingFile;
 }
 
 //----------------------------------------------------------------------
@@ -266,25 +265,7 @@ FileSystem::Open(char *name)
     if (sector >= 0) 		
 	    openFile = new OpenFile(sector);	// name was found in directory 
     delete directory;
-    
     return openFile;				        // return NULL if not found
-}
-
-OpenFile *
-FileSystem::Open(char *name, int type)
-{ 
-    Directory *directory = new Directory(NumDirEntries);
-    OpenFile *openFile = NULL;
-    int sector;
-
-    DEBUG(dbgFile, "Opening file" << name);
-    directory->FetchFrom(directoryFile);
-    sector = directory->Find(name); 
-    if (sector >= 0) 		
-	    openFile = new OpenFile(sector, type);	// name was found in directory 
-    delete directory;
-    
-    return openFile;				            // return NULL if not found
 }
 
 //----------------------------------------------------------------------
@@ -393,7 +374,7 @@ int FindFreeSlot()
 {
     for(int i = 2; i < maxOpeningFile; i++)
     {
-        if(openf[i] == NULL) return i;		
+        if(openingFile[i] == NULL) return i;		
     }
     return -1;
 }

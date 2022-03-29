@@ -192,6 +192,18 @@ sortBubble: sortBubble.o start.o
 	$(LD) $(LDFLAGS) start.o sortBubble.o -o sortBubble.coff
 	$(COFF2NOFF) sortBubble.coff sortBubble
 
+cat.o: cat.c
+	$(CC) $(CFLAGS) -c cat.c
+cat: cat.o start.o
+	$(LD) $(LDFLAGS) start.o cat.o -o cat.coff
+	$(COFF2NOFF) cat.coff cat
+
+copy.o: copy.c
+	$(CC) $(CFLAGS) -c copy.c
+copy: copy.o start.o
+	$(LD) $(LDFLAGS) start.o copy.o -o copy.coff
+	$(COFF2NOFF) copy.coff copy
+
 shell.o: shell.c
 	$(CC) $(CFLAGS) -c shell.c
 shell: shell.o start.o
@@ -215,24 +227,6 @@ matmult.o: matmult.c
 matmult: matmult.o start.o
 	$(LD) $(LDFLAGS) start.o matmult.o -o matmult.coff
 	$(COFF2NOFF) matmult.coff matmult
-
-createfile.o: createfile.c
-	$(CC) $(CFLAGS) -c createfile.c
-createfile: createfile.o start.o
-	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
-	$(COFF2NOFF) createfile.coff createfile
-
-cat.o: cat.c
-	$(CC) $(CFLAGS) -c cat.c
-cat: cat.o start.o
-	$(LD) $(LDFLAGS) start.o cat.o -o cat.coff
-	$(COFF2NOFF) cat.coff cat
-
-copy.o: copy.c
-	$(CC) $(CFLAGS) -c copy.c
-copy: copy.o start.o
-	$(LD) $(LDFLAGS) start.o copy.o -o copy.coff
-	$(COFF2NOFF) copy.coff copy
 
 clean:
 	$(RM) -f *.o *.ii

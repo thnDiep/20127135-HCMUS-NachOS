@@ -29,12 +29,9 @@
 							// See definitions listed under #else
 class OpenFile {
   public:
-  	// Type of the opening file
-  	int type;
 
-    OpenFile(int f) { file = f; currentOffset = 0; type = 0;}					// Default Constructor
-    OpenFile(int f, int t) { file = f; currentOffset = 0; type = t; }	// Constructor with parameter type
-	~OpenFile() { Close(file); }										// Destructor
+    OpenFile(int f) { file = f; currentOffset = 0;}	// open the file
+	~OpenFile() { Close(file); }					// close the file
 										
 	int Seek(int pos) {
 		Lseek(file, pos, 0);
@@ -69,14 +66,6 @@ class OpenFile {
 		Lseek(file, 0, 2); 
 		return Tell(file); 
 	}
-    
-	// int Length() {
-	// 	int len;
-	// 	Lseek(file, 0, 2);
-	// 	len = Tell(file);
-	// 	Lseek(file, currentOffset, 0);
-	// 	return len;
-	// }
 
 	int GetCurrentPos() { 
 		currentOffset = Tell(file); 
@@ -92,17 +81,9 @@ class OpenFile {
 class FileHeader;
 
 class OpenFile {
-  public:
- 	// Type of the opening file
-  	int type;
-	// type 0 : only read
-	// type 1 : read and write
-	// type 2 : stdin
-	// type 3 : stdout
-	
+  public:	
     OpenFile(int sector);				// Open a file whose header is located
-										// at "sector" on the disk
-	OpenFile(int sector, int t);		// Open a file with parameter type		
+										// at "sector" on the disk	
    
     ~OpenFile();						// Close the file
 
@@ -130,7 +111,6 @@ class OpenFile {
   private:
     FileHeader *hdr;			// Header for this file 
     int seekPosition;			// Current position within the file
-	char* name;
 };
 
 #endif // FILESYS

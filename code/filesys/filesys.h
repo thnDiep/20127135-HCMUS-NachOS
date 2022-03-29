@@ -37,31 +37,29 @@
 #include "sysdep.h"
 #include "openfile.h"
 
-typedef int OpenFileId;
-
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 							// calls to UNIX, until the real file system
 							// implementation is available
 class FileSystem {
   public:
-	// The opening file table  -> (check the file whether is opening and keep type of the opening file)
-	OpenFile** openf;
+	// The opening file table
+	OpenFile** openingFile;
 	const int maxOpeningFile = 10;
 
-	// Redefine
+	// Constructor create the opening file table include 10 OpenFile*
     FileSystem() {
-		openf = new OpenFile*[maxOpeningFile];
+		openingFile = new OpenFile*[maxOpeningFile];
 
 		// Init table
 		for(int i = 0; i < maxOpeningFile; i++){
-			openf[i] = NULL;
+			openingFile[i] = NULL;
 		}
 
 		// 2 field default in the table (index = 0 (stdin), index = 1 (stdout))
 		this->Create("stdin");
 		this->Create("stdout");
-		openf[0] = this->Open("stdin", 2);
-		openf[1] = this->Open("stdout", 3);  
+		openingFile[0] = this->Open("stdin");
+		openingFile[1] = this->Open("stdout");  
 	}
 
 	// Destructor -> remove the opening file table  
@@ -69,10 +67,10 @@ class FileSystem {
 	{
 		for (int i = 0; i < maxOpeningFile; i++)
 		{
-			if (openf[i] != NULL) 
-				delete openf[i];
+			if (openingFile[i] != NULL) 
+				delete openingFile[i];
 		}
-		delete[] openf;
+		delete[] openingFile;
 	}
 
     bool Create(char *name) {
@@ -90,14 +88,6 @@ class FileSystem {
 		return new OpenFile(fileDescriptor);
     }
 
-	// Overload Constructor with the parameter type
-	OpenFile* Open(char *name, int type) {
-		int fileDescriptor = OpenForReadWrite(name, FALSE);
-
-		if (fileDescriptor == -1) return NULL;
-		return new OpenFile(fileDescriptor, type);
-	}
-
     bool Remove(char *name) { 
 		return Unlink(name) == 0; 
 	}
@@ -107,7 +97,7 @@ class FileSystem {
 	{
 		for(int i = 2; i < maxOpeningFile; i++)
 		{
-			if(openf[i] == NULL) return i;		
+			if(openingFile[i] == NULL) return i;		
 		}
 		return -1;
 	}
@@ -117,7 +107,7 @@ class FileSystem {
 class FileSystem {
 public:
  	// The opening file table -> (check the file whether is opening and keep type of the opening file)
-	OpenFile** openf;
+	OpenFile** openingFile;
 	const int maxOpeningFile = 10;
 
     FileSystem(bool format);		// Initialize the file system.
@@ -132,8 +122,6 @@ public:
 									// Create a file (UNIX creat)
 									
     OpenFile* Open(char *name); 	// Open a file (UNIX open)
-	OpenFile* Open(char *name, int type); 	
-									// Open a file with type parameter
 
     bool Remove(char *name);  		// Delete a file (UNIX unlink)
 
