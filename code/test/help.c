@@ -20,10 +20,10 @@ int main(){
 
 	PrintString("\t\t -----Create File-----\n");
 	PrintString("Program executes the command to create a new file 'TestFile.txt'\n");
-	PrintString("Announce the result of the program: success or failure or error\n\n")
+	PrintString("Announce the result of the program: success or failure or error\n\n");
 
 	PrintString("\t\t -----Cat-----\n");
-	PrintSrting("User input the name of file\n");
+	PrintString("User input the name of file\n");
 	PrintString("Program print content of that file\n\n");
 
 	PrintString("\t\t -----Copy-----\n");

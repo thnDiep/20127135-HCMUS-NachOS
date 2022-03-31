@@ -205,7 +205,7 @@ copy: copy.o start.o
 	$(COFF2NOFF) copy.coff copy
 
 delete.o: delete.c
-	$(CC) $(CFLAGS) -c remove.c
+	$(CC) $(CFLAGS) -c delete.c
 delete: delete.o start.o
 	$(LD) $(LDFLAGS) start.o delete.o -o delete.coff
 	$(COFF2NOFF) delete.coff delete

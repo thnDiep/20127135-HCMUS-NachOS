@@ -6,14 +6,16 @@
 *
 */
 
-
-
 #include "syscall.h"
 
 int main() {
-    char name[255];
-    PrintString("Input the name of file\n");
-    ReadString(name,readNum());
+    char name[32];
+    int lengthName;
+
+    PrintString("\nInput the length of filename: ");
+    lengthName = ReadNum();
+    PrintString("Input filename: ");
+    ReadString(name, lengthName);
 
     Remove(name);
 

@@ -1,36 +1,40 @@
 /* cat.c
  *	Simple program to test whether the systemcall interface works.
  *	
- *	Just do ReadString, PrintString, Open and Seek syscall that display the content of the file.
+ *	Just do ReadString, PrintString, PrintChar, Open, Close, Read and Seek syscall that display the content of the file.
  *
  */
-
-
 
 #include "syscall.h" 
 
 int main() {
-    // char name[100];
-    // PrintString("Input name's length: ");
-    // int n = ReadNum();
-    // PrintString("\nInput name: ");
-    // ReadString(name, n); 
+    char name[32];
+    int lengthName, sizeFile, idFile, i;
+    char info;
 
-    // int k = Open(name);
-    // char info;
-    // if (k != -1) {
-    //     int size = Seek(-1, k); // lay do dai noi dung
-    //     Seek(0,k);              // quay lai dau file de doc noi dung
-    //     for(int i = 0; i < size; i++) {
-    //         Read(&info, 1, k);
-    //         PrintString(info);
-    //     }
-    //     Close (k);
-    // }
-    // else 
-    //     PrintString ("Error!!");
-    
-    // return 0;
+    PrintString("\nInput the length of filename: ");
+    lengthName = ReadNum();
+    PrintString("Input filename: ");
+    ReadString(name, lengthName);
+
+    idFile = Open(name);    // Open file
+
+    if(idFile == -1){
+        PrintString ("Open file fail.\n");
+        Halt();
+    }
+  
+    // Successfully open
+    sizeFile = Seek(-1, idFile);    // Get the length of the file
+    Seek(0, idFile);                // Go to the top of the file to start read file
+
+    for(i = 0; i < sizeFile; i++){
+       Read(&info, 1, idFile);
+       PrintChar(info);
+    }
+
+    Close (idFile);
+
     Halt();
     /*  Not reached  */
 }

@@ -1,55 +1,66 @@
-/* add.c
+/* copy.c
  *	Simple program to test whether the systemcall interface works.
  *	
- *	Just do PrintString, PrintString, Create, Seek, Close syscall that copies the content of the source file for destination file.
+ *	Just do ReadString, PrintString, Create, Seek, Open, Read, Write, Close syscall that copies the content of the source file for destination file.
  *
  */
 
 #include "syscall.h" 
 
 int main () {
-	// int file1, file2, sizeFile;
-	// char name1[100], name2[100];
+	int srcFile, desFile;	// id of files
+	char nameSrcFile[32], nameDesFile[32];
+	int lengthName, sizeFile, i;
+	char info; 
 	
-    // PrintString("Input file1 name's length: ");
-    // int n = ReadNum();
-	// PrintString("\nInput file1 name: ");
-	// ReadString(name1, n); 
+	// Read the source file name
+    PrintString("\nInput source file name's length: ");
+    lengthName = ReadNum();
+	PrintString("Input source file name: ");
+	ReadString(nameSrcFile, lengthName);
 	
-    // PrintString("Input file2 name's length: ");
-    // int m = ReadNum();
-	// PrintString("Input file2 name:");
-	// ReadString(name2, m); 
+	// Read the destination file name
+    PrintString("\nInput destination file name's length: ");
+    lengthName = ReadNum();
+	PrintString("Input destination file name: ");
+	ReadString(nameDesFile, lengthName); 
 
-	// file1 = Open(name1, 1); 
-	// char info; 
-	// if (file1 != -1) 
-	// {
-	// 	file2 = Create(name2);
-	// 	Close(file2);
-	// 	file2 = Open(name2, 0); 
-	// 	if (file2 != -1) 
-	// 	{
-	// 		sizeFile = Seek(-1, file1);
-	// 		Seek(0, file1); // Seek den dau file nguon
-	// 		Seek(0, file2); // Seek den dau file dich
-	// 		for (int i = 0 ; i < sizeFile; i++) 
-	// 		{
-	// 			Read(&info, 1, file1); //Doc tung ki tu cua file nguon
-	// 			Write(&info, 1, file2); //Ghi vao file dich
-	// 		}
-	// 		PrintString("Successful!\n");
-	// 		Close(file2); 
-	// 	}
-	// 	else
-	// 		PrintString("Error\n");
-		
-	// 	Close(file1); 
-	// }
-	// else
-	// 	PrintString("Can't open file!");
-	
-	// return 0;
+	// Open the source file
+	srcFile = Open(nameSrcFile); 
+
+	if (srcFile == -1) {
+		PrintString ("Open source file fail.\n");
+		Halt();
+	}
+
+    if (Create(nameDesFile) == -1){
+		PrintString("Create destination file fail!.\n");
+		Halt();
+	}
+
+	// Open the destination file
+	desFile = Open(nameDesFile); 
+        
+	if (desFile == -1){
+		PrintString ("Open destination file fail.\n");
+		Halt();
+	}
+
+	// copy the content of the source file for destination file
+	sizeFile = Seek(-1, srcFile); 	// Size of the source file
+
+	Seek(0, srcFile); 				// Go to the top of the file to start reading file
+	Seek(0, desFile); 				// Go to the top of the file to start writing file
+
+	for (i = 0; i < sizeFile; i++) 
+	{
+		Read(&info, 1, srcFile);	// Read character from the source file
+		Write(&info, 1, desFile); 	// Write it into the destination file
+	}
+
+	Close(desFile); 
+	Close(srcFile); 
+
 	Halt();
 	/*  Not reached  */
 }

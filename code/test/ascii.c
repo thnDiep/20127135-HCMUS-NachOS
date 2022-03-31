@@ -1,3 +1,5 @@
+// ThIếu cmt
+
 #include "syscall.h"
 
 int main() {
