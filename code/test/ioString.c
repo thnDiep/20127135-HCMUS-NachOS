@@ -9,7 +9,6 @@
 
 int main(){
   char str[255];
-  int length = 0;
   
   ReadString(str, ReadNum());
   PrintString(str);
