@@ -107,10 +107,9 @@ class OpenFile {
 										// end of file, tell, lseek back 
 
     int GetCurrentPos();				// Get the current position within the file
-
   private:
-    FileHeader *hdr;			// Header for this file 
-    int seekPosition;			// Current position within the file
+    FileHeader *hdr;					// Header for this file 
+    int seekPosition;					// Current position within the file
 };
 
 #endif // FILESYS
