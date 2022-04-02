@@ -152,7 +152,7 @@ void Handle_ReadNum(){
 
 	char input;					// Get input from console
 	int64_t result = 0;
-	int length = 0;				// Length of the number to check limit of number
+	int length = 0;					// Length of the number to check limit of number
 	bool isError = false;
 	bool isFirstChar = true;
 	bool isNegative = false;
@@ -211,7 +211,7 @@ void Handle_PrintNum(){
 		return;
 	}
 
-	bool isNegative = false;	// check the sign of the number
+	bool isNegative = false;		// check the sign of the number
 	int length = 0;				// length of the number
 
 	if(number < 0){				// negative number
@@ -220,7 +220,7 @@ void Handle_PrintNum(){
 		length = 1;
 	}
 
-	int temp_number = number;	// compute length of the number
+	int temp_number = number;		// compute length of the number
 	while(temp_number){
 		temp_number /= 10;
 		length++;
@@ -438,7 +438,7 @@ void Handle_Close() {
 	OpenFileId id = kernel->machine->ReadRegister(4);
 
 	if(id < 0 || id > kernel->fileSystem->maxOpeningFile - 1){
-													// id out of range of the opening file table [0; 10]
+									// id out of range of the opening file table [0; 9]
 		DEBUG(dbgSys, "ID of the file is out of range.\n");
 		kernel->machine->WriteRegister(2, -1);
 	}
@@ -454,9 +454,9 @@ void Handle_Close() {
 }
 
 // ------------------------------------------------------------------------
-// int Write(char *buffer, int size, OpenFileId id);
+// int Read(char *buffer, int size, OpenFileId id);
 // Use: To read "size" bytes from the open file into "buffer".
-// Return: the number of bytes actually read (read/ read and write/ stdin), -1 on failure, -2 if read the empty file
+// Return: the number of bytes actually read, -1 on failure, -2 if read the empty file
 // ------------------------------------------------------------------------
 void Handle_Read() {
 	DEBUG(dbgSys, "---------- READING THE FILE ----------\n");
@@ -529,9 +529,9 @@ void Handle_Read() {
 }
 
 // ------------------------------------------------------------------------
-// int Read(char *buffer, int size, OpenFileId id);
+// int Write(char *buffer, int size, OpenFileId id);
 // Use: To write "size" bytes from "buffer" to the open file. 
-// Return: the number of bytes actually write (read and write/ stdout), -1 on failure
+// Return: the number of bytes actually write, -1 on failure
 // ------------------------------------------------------------------------
 void Handle_Write() {
 	DEBUG(dbgSys, "---------- WRITING THE FILE ----------\n");
