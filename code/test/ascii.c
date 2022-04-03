@@ -1,4 +1,4 @@
-/*
+/* ascii.c
  *	Simple program to test whether the systemcall interface works.
  *	
  *	Just do PrintNum and PrintChar syscall that prints the ascii table.
