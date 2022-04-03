@@ -55,9 +55,6 @@ const int MAX_LENGTH_STRING = 255;
 const int MAX_FILE_LENGTH = 32;
 
 
-#define ConsoleInput	0
-#define ConsoleOutput	1
-
 // Modify return point 
 void IncreasePC(){
 	  /* set previous programm counter (debugging only)*/
@@ -150,7 +147,7 @@ void Handle_Add(){
 void Handle_ReadNum(){
 	DEBUG(dbgSys, "---------- READING THE NUMBER CHARACTER FROM THE CONSOLE ----------\n");
 
-	char input;					// Get input from console
+	char input;						// Get input from console
 	int64_t result = 0;
 	int length = 0;					// Length of the number to check limit of number
 	bool isError = false;
@@ -212,9 +209,9 @@ void Handle_PrintNum(){
 	}
 
 	bool isNegative = false;		// check the sign of the number
-	int length = 0;				// length of the number
+	int length = 0;					// length of the number
 
-	if(number < 0){				// negative number
+	if(number < 0){					// negative number
 		isNegative = true;
 		number *= -1;
 		length = 1;
@@ -409,7 +406,7 @@ void Handle_Open() {
 
 	int freeSlot = kernel->fileSystem->FindFreeSlot();
 
-	if (freeSlot != -1){  				// The opening file table has a free slot
+	if (freeSlot != -1){  							// The opening file table has a free slot
 		kernel->fileSystem->openingFile[freeSlot] = kernel->fileSystem->Open(nameFile);
 
 		if (kernel->fileSystem->openingFile[freeSlot]) {
@@ -421,7 +418,7 @@ void Handle_Open() {
 			kernel->machine->WriteRegister(2, -1);
 		}	
 	}
-	else{						// The opening file table is full
+	else{											// The opening file table is full
 		DEBUG(dbgSys, "Can't open the file.\n");
 		kernel->machine->WriteRegister(2, -1);
 	}
@@ -438,7 +435,7 @@ void Handle_Close() {
 	OpenFileId id = kernel->machine->ReadRegister(4);
 
 	if(id < 0 || id > kernel->fileSystem->maxOpeningFile - 1){
-									// id out of range of the opening file table [0; 9]
+														// id out of range of the opening file table [0; 9]
 		DEBUG(dbgSys, "ID of the file is out of range.\n");
 		kernel->machine->WriteRegister(2, -1);
 	}
@@ -478,7 +475,7 @@ void Handle_Read() {
 			return;
 		}
 
-		if(id == ConsoleOutput){
+		if(id == ConsoleOut){
 			DEBUG(dbgSys, "Can't read the stdout file.\n");
 			kernel->machine->WriteRegister(2, -1);
 			return;
@@ -490,7 +487,7 @@ void Handle_Read() {
 	char* buffer = new char[size];
 
 	// Read the ConsoleInput
-	if (id == ConsoleInput){
+	if (id == ConsoleIn){
 		// Read from console
 		int number_byte = 0;
 		char input;
@@ -553,7 +550,7 @@ void Handle_Write() {
 			return;
 		}
 
-		if(id == ConsoleInput){
+		if(id == ConsoleIn){
 			DEBUG(dbgSys, "Can't write the stdin file.\n");
 			kernel->machine->WriteRegister(2, -1);
 			return;
@@ -564,7 +561,7 @@ void Handle_Write() {
 	char* buffer = UserToKernel(addr, size);
 	
 	// Write the ConsoleOutput
-	if (id == ConsoleOutput){
+	if (id == ConsoleOut){
 		int i = 0;
 		char input;
 		while (buffer[i] != 0 && buffer[i] != '\n'){
@@ -618,7 +615,7 @@ void Handle_Seek() {
 			return;
 		}
 
-		if(id == ConsoleInput || id == ConsoleOutput){
+		if(id == ConsoleIn || id == ConsoleOut){
 			DEBUG(dbgSys, "Can't call System-call Seek on the console.\n");
 			kernel->machine->WriteRegister(2, -1);
 			return;

@@ -129,8 +129,8 @@ typedef int OpenFileId;
  * the console device.
  */
 
-// #define ConsoleInput	0  
-// #define ConsoleOutput	1  
+const OpenFileId ConsoleIn = 0;  
+const OpenFileId ConsoleOut = 1;  
  
 /* Create a Nachos file, with name "name" */
 /* Note: Create does not open the file.   */

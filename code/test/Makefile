@@ -112,7 +112,7 @@ ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = add halt shell matmult sort segments ioNum ioChar randomNum ioString createfile sortBubble help ascii createfile cat copy delete
+PROGRAMS = add halt shell matmult sort segments ioNum ioChar randomNum ioString sortBubble help ascii createfile cat copy delete
 endif
 
 all: $(PROGRAMS)
@@ -156,24 +156,6 @@ ioString: ioString.o start.o
 	$(LD) $(LDFLAGS) start.o ioString.o -o ioString.coff
 	$(COFF2NOFF) ioString.coff ioString
 
-createfile.o: createfile.c
-	$(CC) $(CFLAGS) -c createfile.c
-createfile: createfile.o start.o
-	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
-	$(COFF2NOFF) createfile.coff createfile
-
-openCloseFile.o: openCloseFile.c 
-	$(CC) $(CFLAGS) -C openCloseFile.c 
-openCloseFile: openCloseFile.o start.o
-	$(LD) $(LDFLAGS) start.o openCloseFile.o -o openCloseFile.coff
-	$(COFF2NOFF) openCloseFile.coff openCloseFile
-
-iofile.o: ioFile.c
-	$(CC) $(CFLAGS) -c ioFile.c
-ioFile: ioFile.o start.o
-	$(LD) $(LDFLAGS) start.o ioFile.o -o ioFile.coff
-	$(COFF2NOFF) ioFile.coff ioFile
-
 help.o: help.c
 	$(CC) $(CFLAGS) -c help.c
 help: help.o start.o
@@ -191,6 +173,12 @@ sortBubble.o: sortBubble.c
 sortBubble: sortBubble.o start.o
 	$(LD) $(LDFLAGS) start.o sortBubble.o -o sortBubble.coff
 	$(COFF2NOFF) sortBubble.coff sortBubble
+
+createfile.o: createfile.c
+	$(CC) $(CFLAGS) -c createfile.c
+createfile: createfile.o start.o
+	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
+	$(COFF2NOFF) createfile.coff createfile
 
 cat.o: cat.c
 	$(CC) $(CFLAGS) -c cat.c
