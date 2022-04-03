@@ -152,7 +152,7 @@ void Handle_ReadNum(){
 
 	char input;					// Get input from console
 	int64_t result = 0;
-	int length = 0;				// Length of the number to check limit of number
+	int length = 0;					// Length of the number to check limit of number
 	bool isError = false;
 	bool isFirstChar = true;
 	bool isNegative = false;
@@ -211,7 +211,7 @@ void Handle_PrintNum(){
 		return;
 	}
 
-	bool isNegative = false;	// check the sign of the number
+	bool isNegative = false;		// check the sign of the number
 	int length = 0;				// length of the number
 
 	if(number < 0){				// negative number
@@ -220,7 +220,7 @@ void Handle_PrintNum(){
 		length = 1;
 	}
 
-	int temp_number = number;	// compute length of the number
+	int temp_number = number;		// compute length of the number
 	while(temp_number){
 		temp_number /= 10;
 		length++;
@@ -259,7 +259,7 @@ void Handle_ReadChar(){
 	else
 		DEBUG(dbgSys, "Read the charactor returning with " << result << ".\n");
 	
-	kernel->machine->WriteRegister(2, result);
+	kernel->machine->WriteRegister(2, (int)result);
 }
 
 // ------------------------------------------------------------------------
@@ -269,7 +269,7 @@ void Handle_ReadChar(){
 void Handle_PrintChar(){
 	DEBUG(dbgSys, "---------- PRINTING A CHARACTER TO THE CONSOLE ----------\n");
 
-	char result = kernel->machine->ReadRegister(4);
+	char result = (char)kernel->machine->ReadRegister(4);
 
 	kernel->synchConsoleOut->PutChar(result);
 }
@@ -295,8 +295,8 @@ void Handle_RandomNum(){
 void Handle_ReadString() {
 	DEBUG(dbgSys, "---------- READING A STRING FROM THE CONSOLE ----------\n");
 
-	int addr = kernel->machine->ReadRegister(4);	// address of string from register4
-	int length = kernel->machine->ReadRegister(5);	// length of string from register5
+	int addr = kernel->machine->ReadRegister(4);	// address of string
+	int length = kernel->machine->ReadRegister(5);	// length of string
 	
 	char* buffer = new char[length + 1];
 
@@ -321,7 +321,7 @@ void Handle_ReadString() {
 void Handle_PrintString() {
 	DEBUG(dbgSys, "---------- PRINTING A STRING TO THE CONSOLE ----------\n");
 
-	int addr = kernel->machine->ReadRegister(4);
+	int addr = kernel->machine->ReadRegister(4);	// address of string
 
 	char* buffer = UserToKernel(addr, MAX_LENGTH_STRING);
 
@@ -409,7 +409,7 @@ void Handle_Open() {
 
 	int freeSlot = kernel->fileSystem->FindFreeSlot();
 
-	if (freeSlot != -1){  							// The opening file table has a free slot
+	if (freeSlot != -1){  				// The opening file table has a free slot
 		kernel->fileSystem->openingFile[freeSlot] = kernel->fileSystem->Open(nameFile);
 
 		if (kernel->fileSystem->openingFile[freeSlot]) {
@@ -421,7 +421,7 @@ void Handle_Open() {
 			kernel->machine->WriteRegister(2, -1);
 		}	
 	}
-	else{											// The opening file table is full
+	else{						// The opening file table is full
 		DEBUG(dbgSys, "Can't open the file.\n");
 		kernel->machine->WriteRegister(2, -1);
 	}
@@ -438,7 +438,7 @@ void Handle_Close() {
 	OpenFileId id = kernel->machine->ReadRegister(4);
 
 	if(id < 0 || id > kernel->fileSystem->maxOpeningFile - 1){
-													// id out of range of the opening file table [0; 10]
+									// id out of range of the opening file table [0; 9]
 		DEBUG(dbgSys, "ID of the file is out of range.\n");
 		kernel->machine->WriteRegister(2, -1);
 	}
@@ -454,13 +454,13 @@ void Handle_Close() {
 }
 
 // ------------------------------------------------------------------------
-// int Write(char *buffer, int size, OpenFileId id);
+// int Read(char *buffer, int size, OpenFileId id);
 // Use: To read "size" bytes from the open file into "buffer".
-// Return: the number of bytes actually read (read/ read and write/ stdin), -1 on failure, -2 if read the empty file
+// Return: the number of bytes actually read, -1 on failure, -2 if read the empty file
 // ------------------------------------------------------------------------
 void Handle_Read() {
 	DEBUG(dbgSys, "---------- READING THE FILE ----------\n");
-	int addr = kernel->machine->ReadRegister(4);	// the address of the name's file
+	int addr = kernel->machine->ReadRegister(4);	// the address of the buffer
 	int size = kernel->machine->ReadRegister(5);	// the size bytes of buffer
 	OpenFileId id = kernel->machine->ReadRegister(6);
 
@@ -489,7 +489,7 @@ void Handle_Read() {
 	int posBeforeRead = kernel->fileSystem->openingFile[id]->GetCurrentPos();
 	char* buffer = new char[size];
 
-	// Read the stdin file
+	// Read the ConsoleInput
 	if (id == ConsoleInput){
 		// Read from console
 		int number_byte = 0;
@@ -510,7 +510,7 @@ void Handle_Read() {
 		return;
 	}
 
-	// Read the read/ read and write file
+	// Read the file
 	if ((kernel->fileSystem->openingFile[id]->Read(buffer, size)) > 0){
 		int posAfterRead = kernel->fileSystem->openingFile[id]->GetCurrentPos();
 		int number_byte = posAfterRead - posBeforeRead;
@@ -529,13 +529,13 @@ void Handle_Read() {
 }
 
 // ------------------------------------------------------------------------
-// int Read(char *buffer, int size, OpenFileId id);
+// int Write(char *buffer, int size, OpenFileId id);
 // Use: To write "size" bytes from "buffer" to the open file. 
-// Return: the number of bytes actually write (read and write/ stdout), -1 on failure
+// Return: the number of bytes actually write, -1 on failure
 // ------------------------------------------------------------------------
 void Handle_Write() {
 	DEBUG(dbgSys, "---------- WRITING THE FILE ----------\n");
-	int addr = kernel->machine->ReadRegister(4);	// the address of the name's file
+	int addr = kernel->machine->ReadRegister(4);	// the address of the buffer
 	int size = kernel->machine->ReadRegister(5); 	// the size bytes of buffer
 	OpenFileId id = kernel->machine->ReadRegister(6);
 
@@ -563,7 +563,7 @@ void Handle_Write() {
 	int posBeforeWrite = kernel->fileSystem->openingFile[id]->GetCurrentPos();
 	char* buffer = UserToKernel(addr, size);
 	
-	// Write the stdout file
+	// Write the ConsoleOutput
 	if (id == ConsoleOutput){
 		int i = 0;
 		char input;
@@ -578,7 +578,7 @@ void Handle_Write() {
 		return;
 	}
 
-	// Write the read and write file
+	// Write the file
 	if ((kernel->fileSystem->openingFile[id]->Write(buffer, size)) > 0){
 		int posAfterWrite = kernel->fileSystem->openingFile[id]->GetCurrentPos();
 		int number_byte = posAfterWrite - posBeforeWrite;
